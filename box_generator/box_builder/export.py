@@ -10,6 +10,6 @@ def export_stl(solid: cq.Workplane, export_cfg: dict) -> str:
         solid,
         filename,
         tolerance=export_cfg["tolerance"],
-        angularTolerance=0.2,
+        angularTolerance=export_cfg.get("angular_tolerance", 0.2),
     )
     return filename

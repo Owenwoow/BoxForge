@@ -142,6 +142,10 @@ const [initW, initH] = containerSize();
 const camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 8000);
 camera.up.set(0, 0, 1);
 const renderer = new THREE.WebGLRenderer({{ antialias: true }});
+// Render at the display's real pixel density (capped at 2x for perf), else
+// the canvas renders at 1x and gets upscaled by the browser -> blurry on
+// HiDPI / Retina / 2K / 4K screens.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(initW, initH);
 container.appendChild(renderer.domElement);
 
@@ -150,6 +154,7 @@ function resizeToContainer() {{
     if (w === 0 || h === 0) return;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h);
 }}
 window.addEventListener("resize", resizeToContainer);
@@ -241,7 +246,12 @@ def render_preview(solid, tmp_dir: Path, cfg_hash: str):
 
     stl_path = tmp_dir / f"preview_{cfg_hash}.stl"
     if not stl_path.exists():
-        export_stl(solid, {"filename": str(stl_path), "tolerance": 0.15})
+        # Fine tessellation for a smooth preview -- coarse tolerance makes
+        # the rounded corners/fillets look faceted. Still fast enough here.
+        export_stl(
+            solid,
+            {"filename": str(stl_path), "tolerance": 0.05, "angular_tolerance": 0.1},
+        )
 
     stl_bytes = stl_path.read_bytes()
     b64 = base64.b64encode(stl_bytes).decode("ascii")
