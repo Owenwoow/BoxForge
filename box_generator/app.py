@@ -18,6 +18,22 @@ from main import build_from_config
 
 st.set_page_config(page_title="参数化收纳盒生成器", layout="wide")
 
+# Wider default sidebar so the slider+number-box pairs (added for direct
+# numeric entry) have room to breathe instead of cramming the number box's
+# stepper buttons against the slider's min/max labels. Users can still
+# drag-resize it narrower/wider afterward.
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"] {
+        width: 400px !important;
+        min-width: 320px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 DEFAULT_PARTITIONS_YAML = """split:
   axis: x
   at: 0.5
@@ -61,7 +77,7 @@ def _synced_number_slider(label: str, min_v: float, max_v: float, default: float
     def _from_number():
         st.session_state[slider_key] = st.session_state[number_key]
 
-    col1, col2 = st.sidebar.columns([3, 2])
+    col1, col2 = st.sidebar.columns([5, 3])
     with col1:
         st.slider(label, min_v, max_v, default, step, key=slider_key, on_change=_from_slider)
     with col2:
