@@ -98,9 +98,9 @@ def _synced_number_slider(label: str, min_v: float, max_v: float, default: float
 # --- Partition tree builder: click-and-fill instead of hand-written YAML ---
 #
 # The tree is stored as one object in st.session_state["ptree"] (same shape
-# validate.py expects: {axis, at, thickness, height, children:[a,b]} or
-# None). A `path` is a tuple of 0/1 child indices from the root, used both
-# to address a node and as a stable widget-key suffix.
+# validate.py expects: {split: {axis, at, thickness, height}, children:[a,b]}
+# or None). A `path` is a tuple of 0/1 child indices from the root, used both
+# to address a node and as a stable widget-key suffix (e.g. "p_0_1_axis").
 
 AXIS_LABELS = {"x": "沿长度切 (分左右)", "y": "沿宽度切 (分前后)"}
 SIDE_LABELS = {("x", 0): "左侧", ("x", 1): "右侧", ("y", 0): "前侧", ("y", 1): "后侧"}
@@ -121,6 +121,21 @@ def _set_node_at_path(path, value):
     for idx in path[:-1]:
         node = node["children"][idx]
     node["children"][path[-1]] = value
+
+
+def _bump_partition_generation():
+    """Every structural tree edit (preset picked, YAML pasted, node added or
+    deleted) bumps this counter. All per-node widget keys bake the current
+    generation in, so any edit renders a fresh set of widget keys.
+
+    Just `del`-ing the old session_state entries isn't enough here: Streamlit
+    can keep a widget's client-side (React) checked/selected state alive
+    across a rerun even after its server-side session_state value was
+    cleared, since the key *string* didn't change. Changing the key string
+    itself forces a real unmount/remount, which sidesteps that staleness at
+    the root instead of fighting it.
+    """
+    st.session_state["ptree_gen"] = st.session_state.get("ptree_gen", 0) + 1
 
 
 def _region_label(path: tuple) -> str:
@@ -200,12 +215,14 @@ def _partition_diagram_svg(tree, inner_length: float, inner_width: float) -> str
 
 def _render_partition_node(path: tuple, default_thickness: float):
     node = st.session_state["ptree"] if not path else _node_at_path(st.session_state["ptree"], path)
-    key = "p_" + "_".join(map(str, path)) if path else "p_root"
+    gen = st.session_state.get("ptree_gen", 0)
+    key = f"p{gen}_" + "_".join(map(str, path)) if path else f"p{gen}_root"
     label = _region_label(path)
 
     if node is None:
         if st.sidebar.button(f"+ 在「{label}」内添加隔板", key=key + "_add", use_container_width=True):
             _set_node_at_path(path, _split_node("x", 0.5, default_thickness))
+            _bump_partition_generation()
             st.rerun()
         return
 
@@ -240,6 +257,7 @@ def _render_partition_node(path: tuple, default_thickness: float):
 
         if st.button("🗑 删除此隔板（含内部子隔板）", key=key + "_del", use_container_width=True):
             _set_node_at_path(path, None)
+            _bump_partition_generation()
             st.rerun()
 
     _render_partition_node(path + (0,), default_thickness)
@@ -252,12 +270,21 @@ def partition_builder_ui(length: float, width: float, wall: float):
 
     st.sidebar.caption("点按钮加隔板，方向/位置/厚度用下面的控件调；下方俯视图会实时更新。")
 
-    preset_choice = st.sidebar.selectbox("快速开始", ["-- 选一个预设 --"] + list(PRESETS.keys()), key="ptree_preset")
-    if preset_choice != "-- 选一个预设 --":
-        value = PRESETS[preset_choice]
-        st.session_state["ptree"] = value(wall) if callable(value) else value
-        st.session_state["ptree_preset"] = "-- 选一个预设 --"
-        st.rerun()
+    def _apply_preset():
+        choice = st.session_state["ptree_preset"]
+        if choice != "-- 选一个预设 --":
+            value = PRESETS[choice]
+            st.session_state["ptree"] = value(wall) if callable(value) else value
+            _bump_partition_generation()
+            # Resetting a widget's own key back to its placeholder is only
+            # allowed from inside that widget's own callback (this runs
+            # before the next rerun instantiates it), not as a plain
+            # assignment after the widget has already been created.
+            st.session_state["ptree_preset"] = "-- 选一个预设 --"
+
+    st.sidebar.selectbox(
+        "快速开始", ["-- 选一个预设 --"] + list(PRESETS.keys()), key="ptree_preset", on_change=_apply_preset
+    )
 
     inner_length, inner_width = length - 2 * wall, width - 2 * wall
     st.sidebar.markdown(
@@ -275,6 +302,7 @@ def partition_builder_ui(length: float, width: float, wall: float):
         if st.button("应用粘贴的 YAML", key="ptree_paste_apply"):
             try:
                 st.session_state["ptree"] = yaml.safe_load(pasted) if pasted.strip() else None
+                _bump_partition_generation()
                 st.rerun()
             except yaml.YAMLError as e:
                 st.sidebar.error(f"YAML 解析失败: {e}")
