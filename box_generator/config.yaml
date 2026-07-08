@@ -1,0 +1,31 @@
+box:
+  size: [120, 80, 40]          # 外部 [长, 宽, 高] mm。长/宽 <= 250 硬校验
+  wall: 2                      # 外墙壁厚 mm
+  corner_radius: 8             # 竖直四角圆角半径 mm，可调，0=直角
+  edge_fillet:                 # 水平棱圆角半径 mm，顶底分开，均可调，0=直角
+    top: 1
+    bottom: 1
+
+partitions:                    # 递归二分树。null 表示该区域不再细分
+  split:
+    axis: x                    # x 或 y
+    at: 0.5                    # 比例(0~1) 或 绝对尺寸字符串 "30mm"
+    thickness: 1.5             # 该隔板厚度 mm
+    height: null                # null=到顶; 数值=隔板高度 mm(可不到顶)
+  children:
+    - split: {axis: y, at: "30mm", thickness: 1.5, height: null}
+      children: [null, null]   # 左半再横切成两块,都不再分
+    - null                     # 右半不再分
+
+hollow:
+  hole_size: 8                 # 药丸孔的宽度 mm (只调这个)
+  angle: 45                    # 固定 45,勿改
+  border: auto                 # 自动留实边框 (或给数值指定边框宽 mm)
+  faces:
+    bottom: true                # 底面是否镂空
+    partitions: true            # 隔板是否镂空(true=所有隔板;后续可细化为逐块)
+
+export:
+  format: stl
+  tolerance: 0.1                # 弧面细分精度,越小越精细
+  filename: box_output.stl
