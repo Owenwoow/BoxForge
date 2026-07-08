@@ -4,8 +4,8 @@
     {
       "name": "boxforge-streamlit",
       "runtimeExecutable": "E:\\Code\\BoxForge\\.venv\\Scripts\\streamlit.exe",
-      "runtimeArgs": ["run", "E:\\Code\\BoxForge\\box_generator\\app.py", "--server.headless=true", "--server.port=8765"],
-      "port": 8765
+      "runtimeArgs": ["run", "E:\\Code\\BoxForge\\box_generator\\app.py", "--server.headless=true", "--server.port=9142"],
+      "port": 9142
     }
   ]
 }

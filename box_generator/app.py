@@ -47,12 +47,40 @@ def _config_hash(cfg: dict) -> str:
     return hashlib.sha1(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:10]
 
 
+def _synced_number_slider(label: str, min_v: float, max_v: float, default: float, step: float, key: str) -> float:
+    """Slider + number box bound to the same value, so users can either drag
+    or type an exact number. Both widgets keep their own session_state entry;
+    each on_change writes into the *other* widget's entry so they stay in
+    sync across reruns (Streamlit doesn't sync two independently-keyed
+    widgets automatically)."""
+    slider_key, number_key = f"{key}_slider", f"{key}_number"
+
+    def _from_slider():
+        st.session_state[number_key] = st.session_state[slider_key]
+
+    def _from_number():
+        st.session_state[slider_key] = st.session_state[number_key]
+
+    col1, col2 = st.sidebar.columns([3, 2])
+    with col1:
+        st.slider(label, min_v, max_v, default, step, key=slider_key, on_change=_from_slider)
+    with col2:
+        # Distinct accessible name from the slider (else they'd share one
+        # aria-label, which is both an a11y issue and breaks label-based
+        # element lookup for the two controls).
+        st.number_input(
+            f"{label} 数值", min_v, max_v, default, step, key=number_key, on_change=_from_number,
+            label_visibility="collapsed",
+        )
+    return st.session_state[slider_key]
+
+
 def sidebar_inputs() -> dict:
     st.sidebar.header("盒体尺寸")
-    length = st.sidebar.slider("长 length (mm)", 20.0, 250.0, 120.0, 1.0)
-    width = st.sidebar.slider("宽 width (mm)", 20.0, 250.0, 80.0, 1.0)
-    height = st.sidebar.slider("高 height (mm)", 10.0, 200.0, 40.0, 1.0)
-    wall = st.sidebar.slider("壁厚 wall (mm)", 0.8, 6.0, 2.0, 0.1)
+    length = _synced_number_slider("长 length (mm)", 20.0, 250.0, 120.0, 1.0, "length")
+    width = _synced_number_slider("宽 width (mm)", 20.0, 250.0, 80.0, 1.0, "width")
+    height = _synced_number_slider("高 height (mm)", 10.0, 200.0, 40.0, 1.0, "height")
+    wall = _synced_number_slider("壁厚 wall (mm)", 0.8, 6.0, 2.0, 0.1, "wall")
 
     st.sidebar.header("圆角")
     corner_radius = st.sidebar.slider(
