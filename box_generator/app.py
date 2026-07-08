@@ -14,6 +14,7 @@ import yaml
 
 from box_builder.export import export_stl
 from box_builder.validate import ConfigError, validate_config
+from box_builder.validate import _resolve_split_at as resolve_split_at
 from main import build_from_config
 
 st.set_page_config(page_title="参数化收纳盒生成器", layout="wide")
@@ -34,16 +35,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-DEFAULT_PARTITIONS_YAML = """split:
-  axis: x
-  at: 0.5
-  thickness: 1.5
-  height: null
-children:
-  - split: {axis: y, at: "30mm", thickness: 1.5, height: null}
-    children: [null, null]
-  - null
-"""
+
+def _split_node(axis: str, at: float, thickness: float) -> dict:
+    # Matches the schema validate.py expects: split params nested under
+    # "split", siblings with "children" -- NOT flattened onto the node.
+    return {"split": {"axis": axis, "at": at, "thickness": thickness, "height": None}, "children": [None, None]}
+
+
+PRESETS = {
+    "清空 (无隔板)": None,
+    "对半分 (两列)": lambda t: _split_node("x", 0.5, t),
+    "对半分 (两行)": lambda t: _split_node("y", 0.5, t),
+    "十字分四格": lambda t: {**_split_node("x", 0.5, t), "children": [_split_node("y", 0.5, t), _split_node("y", 0.5, t)]},
+}
 
 
 @st.cache_resource(show_spinner=False)
@@ -91,6 +95,193 @@ def _synced_number_slider(label: str, min_v: float, max_v: float, default: float
     return st.session_state[slider_key]
 
 
+# --- Partition tree builder: click-and-fill instead of hand-written YAML ---
+#
+# The tree is stored as one object in st.session_state["ptree"] (same shape
+# validate.py expects: {axis, at, thickness, height, children:[a,b]} or
+# None). A `path` is a tuple of 0/1 child indices from the root, used both
+# to address a node and as a stable widget-key suffix.
+
+AXIS_LABELS = {"x": "沿长度切 (分左右)", "y": "沿宽度切 (分前后)"}
+SIDE_LABELS = {("x", 0): "左侧", ("x", 1): "右侧", ("y", 0): "前侧", ("y", 1): "后侧"}
+
+
+def _node_at_path(root, path):
+    node = root
+    for idx in path:
+        node = node["children"][idx]
+    return node
+
+
+def _set_node_at_path(path, value):
+    if not path:
+        st.session_state["ptree"] = value
+        return
+    node = st.session_state["ptree"]
+    for idx in path[:-1]:
+        node = node["children"][idx]
+    node["children"][path[-1]] = value
+
+
+def _region_label(path: tuple) -> str:
+    if not path:
+        return "整个盒子"
+    node = st.session_state["ptree"]
+    parts = []
+    for idx in path:
+        parts.append(SIDE_LABELS[(node["split"]["axis"], idx)])
+        node = node["children"][idx]
+    return " › ".join(parts)
+
+
+def _collect_rects(node, x0, x1, y0, y1, walls, leaves):
+    if node is None:
+        leaves.append((x0, x1, y0, y1))
+        return
+    axis, thickness = node["split"]["axis"], node["split"]["thickness"]
+    span = (x1 - x0) if axis == "x" else (y1 - y0)
+    cut = resolve_split_at(node["split"]["at"], span)
+    if axis == "x":
+        a, b = x0 + cut - thickness / 2, x0 + cut + thickness / 2
+        walls.append((a, b, y0, y1))
+        _collect_rects(node["children"][0], x0, a, y0, y1, walls, leaves)
+        _collect_rects(node["children"][1], b, x1, y0, y1, walls, leaves)
+    else:
+        a, b = y0 + cut - thickness / 2, y0 + cut + thickness / 2
+        walls.append((x0, x1, a, b))
+        _collect_rects(node["children"][0], x0, x1, y0, a, walls, leaves)
+        _collect_rects(node["children"][1], x0, x1, b, y1, walls, leaves)
+
+
+def _partition_diagram_svg(tree, inner_length: float, inner_width: float) -> str:
+    walls, leaves = [], []
+    _collect_rects(tree, 0.0, inner_length, 0.0, inner_width, walls, leaves)
+
+    scale = min(320 / inner_length, 200 / inner_width) if inner_length and inner_width else 1
+    vw, vh = inner_length * scale, inner_width * scale
+    pad = 10
+
+    def to_svg(x0, x1, y0, y1):
+        # Flip Y: local y=0 (front / "idx0" side) renders at the BOTTOM of
+        # the diagram, matching the 3D preview's front-facing convention.
+        return (x0 * scale + pad, (vh - y1 * scale) + pad, (x1 - x0) * scale, (y1 - y0) * scale)
+
+    parts = [
+        '<rect x="{:.1f}" y="{:.1f}" width="{:.1f}" height="{:.1f}" fill="#26292f" stroke="#565b64" stroke-width="1.5" rx="3"/>'.format(
+            *to_svg(0, inner_length, 0, inner_width)
+        )
+    ]
+    for x0, x1, y0, y1 in leaves:
+        sx, sy, sw, sh = to_svg(x0, x1, y0, y1)
+        parts.append(
+            f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
+            f'fill="#3a4048" stroke="#6b7078" stroke-width="1"/>'
+        )
+        if sw > 34 and sh > 16:
+            dim = f"{x1 - x0:.0f}×{y1 - y0:.0f}"
+            parts.append(
+                f'<text x="{sx + sw / 2:.1f}" y="{sy + sh / 2:.1f}" fill="#c7cbd1" font-size="11" '
+                f'text-anchor="middle" dominant-baseline="middle">{dim}</text>'
+            )
+    for x0, x1, y0, y1 in walls:
+        sx, sy, sw, sh = to_svg(x0, x1, y0, y1)
+        parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{max(sw,1.5):.1f}" height="{max(sh,1.5):.1f}" fill="#e0645f"/>')
+
+    total_w, total_h = vw + pad * 2, vh + pad * 2 + 18
+    parts.append(
+        f'<text x="{total_w/2:.0f}" y="{total_h-4:.0f}" fill="#8a8f96" font-size="10" text-anchor="middle">'
+        f"俯视图 · 下方=正面(打印时面向你的一侧) · 红色=隔板</text>"
+    )
+    return (
+        f'<svg viewBox="0 0 {total_w:.0f} {total_h:.0f}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="width:100%;max-width:360px;height:auto;display:block;margin:6px auto;">{"".join(parts)}</svg>'
+    )
+
+
+def _render_partition_node(path: tuple, default_thickness: float):
+    node = st.session_state["ptree"] if not path else _node_at_path(st.session_state["ptree"], path)
+    key = "p_" + "_".join(map(str, path)) if path else "p_root"
+    label = _region_label(path)
+
+    if node is None:
+        if st.sidebar.button(f"+ 在「{label}」内添加隔板", key=key + "_add", use_container_width=True):
+            _set_node_at_path(path, _split_node("x", 0.5, default_thickness))
+            st.rerun()
+        return
+
+    split = node["split"]
+    with st.sidebar.container(border=True):
+        st.markdown(f"**隔板 · {label}**")
+        axis_choice = st.radio(
+            "切割方向", list(AXIS_LABELS.values()),
+            index=0 if split["axis"] == "x" else 1,
+            key=key + "_axis", horizontal=True, label_visibility="collapsed",
+        )
+        split["axis"] = "x" if axis_choice == AXIS_LABELS["x"] else "y"
+
+        at_frac = split["at"] if isinstance(split["at"], (int, float)) and 0 <= split["at"] <= 1 else 0.5
+        pct = st.slider(f"切割位置 ({label} 内的比例)", 0, 100, int(round(at_frac * 100)), key=key + "_at")
+        split["at"] = pct / 100
+
+        c1, c2 = st.columns(2)
+        with c1:
+            split["thickness"] = st.number_input(
+                "隔板厚度 (mm)", 0.5, 10.0, float(split["thickness"]), 0.5, key=key + "_thick"
+            )
+        with c2:
+            full_height = st.checkbox("到顶", value=(split["height"] is None), key=key + "_fullh")
+        if not full_height:
+            split["height"] = st.number_input(
+                "隔板高度 (mm，从底部量起)", 5.0, 300.0,
+                float(split["height"]) if split["height"] else 20.0, 1.0, key=key + "_h",
+            )
+        else:
+            split["height"] = None
+
+        if st.button("🗑 删除此隔板（含内部子隔板）", key=key + "_del", use_container_width=True):
+            _set_node_at_path(path, None)
+            st.rerun()
+
+    _render_partition_node(path + (0,), default_thickness)
+    _render_partition_node(path + (1,), default_thickness)
+
+
+def partition_builder_ui(length: float, width: float, wall: float):
+    if "ptree" not in st.session_state:
+        st.session_state["ptree"] = None
+
+    st.sidebar.caption("点按钮加隔板，方向/位置/厚度用下面的控件调；下方俯视图会实时更新。")
+
+    preset_choice = st.sidebar.selectbox("快速开始", ["-- 选一个预设 --"] + list(PRESETS.keys()), key="ptree_preset")
+    if preset_choice != "-- 选一个预设 --":
+        value = PRESETS[preset_choice]
+        st.session_state["ptree"] = value(wall) if callable(value) else value
+        st.session_state["ptree_preset"] = "-- 选一个预设 --"
+        st.rerun()
+
+    inner_length, inner_width = length - 2 * wall, width - 2 * wall
+    st.sidebar.markdown(
+        _partition_diagram_svg(st.session_state["ptree"], inner_length, inner_width),
+        unsafe_allow_html=True,
+    )
+
+    _render_partition_node((), wall)
+
+    with st.sidebar.expander("高级：查看 / 粘贴 YAML"):
+        current_yaml = yaml.safe_dump(st.session_state["ptree"], allow_unicode=True, sort_keys=False) \
+            if st.session_state["ptree"] else "null\n"
+        st.code(current_yaml, language="yaml")
+        pasted = st.text_area("粘贴 YAML 并应用", "", key="ptree_paste", height=100)
+        if st.button("应用粘贴的 YAML", key="ptree_paste_apply"):
+            try:
+                st.session_state["ptree"] = yaml.safe_load(pasted) if pasted.strip() else None
+                st.rerun()
+            except yaml.YAMLError as e:
+                st.sidebar.error(f"YAML 解析失败: {e}")
+
+    return st.session_state["ptree"]
+
+
 def sidebar_inputs() -> dict:
     st.sidebar.header("盒体尺寸")
     length = _synced_number_slider("长 length (mm)", 20.0, 250.0, 120.0, 1.0, "length")
@@ -107,12 +298,8 @@ def sidebar_inputs() -> dict:
         "底沿圆角 edge_fillet.bottom (mm)", 0.0, min(height, min(length, width) / 2), 1.0, 0.1
     )
 
-    st.sidebar.header("隔板 (递归二分树 YAML)")
-    st.sidebar.caption("axis: x/y, at: 比例(0~1)或\"30mm\", children 留空数组表示不再分")
-    enable_partitions = st.sidebar.checkbox("启用隔板", value=True)
-    partitions_yaml = st.sidebar.text_area(
-        "partitions", DEFAULT_PARTITIONS_YAML, height=200, disabled=not enable_partitions
-    )
+    st.sidebar.header("隔板")
+    partitions_tree = partition_builder_ui(length, width, wall)
 
     st.sidebar.header("药丸镂空 (45°, 免支撑)")
     hole_size = st.sidebar.slider("孔大小 hole_size (mm)", 3.0, 20.0, 8.0, 0.5)
@@ -134,7 +321,7 @@ def sidebar_inputs() -> dict:
             "corner_radius": corner_radius,
             "edge_fillet": {"top": edge_top, "bottom": edge_bottom},
         },
-        "partitions": None,
+        "partitions": partitions_tree,
         "hollow": {
             "hole_size": hole_size,
             "angle": 45,
@@ -143,13 +330,6 @@ def sidebar_inputs() -> dict:
         },
         "export": {"format": "stl", "tolerance": tolerance, "filename": filename},
     }
-
-    if enable_partitions:
-        try:
-            raw["partitions"] = yaml.safe_load(partitions_yaml)
-        except yaml.YAMLError as e:
-            st.sidebar.error(f"partitions YAML 解析失败: {e}")
-            raw["partitions"] = None
 
     return raw
 
