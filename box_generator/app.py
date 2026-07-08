@@ -110,9 +110,12 @@ def sidebar_inputs() -> dict:
     return raw
 
 
+BED_SIZE = 256.0  # Bambu print bed 256x256, matches the length/width hard limit
+
+
 def _stl_viewer_html(stl_b64: str) -> str:
     return f"""
-<div id="viewer" style="width:100%;height:520px;background:#f0f2f6;border-radius:8px;"></div>
+<div id="viewer" style="width:100%;height:520px;background:#e9eaec;border-radius:8px;"></div>
 <script type="importmap">
 {{"imports": {{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -124,16 +127,20 @@ import * as THREE from "three";
 import {{ OrbitControls }} from "three/addons/controls/OrbitControls.js";
 import {{ STLLoader }} from "three/addons/loaders/STLLoader.js";
 
+const BED = {BED_SIZE};
+
 const container = document.getElementById("viewer");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf0f2f6);
+scene.background = new THREE.Color(0xe9eaec);
 
 function containerSize() {{
     return [container.clientWidth || window.innerWidth || 700, container.clientHeight || 520];
 }}
 const [initW, initH] = containerSize();
 
-const camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 5000);
+// Z-up, matching CadQuery / Bambu Studio (bed = XY plane, height along +Z).
+const camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 8000);
+camera.up.set(0, 0, 1);
 const renderer = new THREE.WebGLRenderer({{ antialias: true }});
 renderer.setSize(initW, initH);
 container.appendChild(renderer.domElement);
@@ -149,13 +156,36 @@ window.addEventListener("resize", resizeToContainer);
 setTimeout(resizeToContainer, 50);
 setTimeout(resizeToContainer, 300);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(1, 1, 1);
-scene.add(dirLight);
-const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-dirLight2.position.set(-1, -1, 0.5);
-scene.add(dirLight2);
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const key = new THREE.DirectionalLight(0xffffff, 0.85);
+key.position.set(-0.4, -0.8, 1.2);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+fill.position.set(0.8, 0.6, 0.5);
+scene.add(fill);
+
+// --- Print bed (256x256) to simulate the Bambu Studio import view ---
+const bed = new THREE.Mesh(
+    new THREE.PlaneGeometry(BED, BED),
+    new THREE.MeshStandardMaterial({{ color: 0x303234, roughness: 0.95, metalness: 0.0 }})
+);
+bed.position.z = -0.15;  // just below Z=0 so the box floor rests cleanly on top
+scene.add(bed);
+
+// Grid on the XY plane (GridHelper is XZ by default -> rotate 90deg about X).
+const divisions = Math.round(BED / 10);  // ~10mm cells
+const grid = new THREE.GridHelper(BED, divisions, 0x5a5d60, 0x45484b);
+grid.rotation.x = Math.PI / 2;
+grid.position.z = -0.1;
+scene.add(grid);
+
+// Bed outline
+const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(BED, BED)),
+    new THREE.LineBasicMaterial({{ color: 0x6d7073 }})
+);
+edges.position.z = -0.05;
+scene.add(edges);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -170,16 +200,30 @@ function b64ToArrayBuffer(b64) {{
 const loader = new STLLoader();
 const geometry = loader.parse(b64ToArrayBuffer("{stl_b64}"));
 geometry.computeVertexNormals();
-geometry.center();
 
-const material = new THREE.MeshStandardMaterial({{ color: 0xd9b382, metalness: 0.1, roughness: 0.7 }});
+// Rest the box on the bed: center it on X/Y, drop its floor onto Z=0.
+geometry.computeBoundingBox();
+const bb = geometry.boundingBox;
+geometry.translate(
+    -(bb.min.x + bb.max.x) / 2,
+    -(bb.min.y + bb.max.y) / 2,
+    -bb.min.z
+);
+geometry.computeBoundingBox();
+const boxHeight = geometry.boundingBox.max.z;
+
+const material = new THREE.MeshStandardMaterial({{ color: 0xd9b382, metalness: 0.1, roughness: 0.65 }});
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
-geometry.computeBoundingSphere();
-const radius = geometry.boundingSphere.radius;
-camera.position.set(radius * 1.8, radius * 1.4, radius * 1.8);
-controls.target.set(0, 0, 0);
+// Default view: bottom down, front (-Y) toward viewer, looking down ~45 deg,
+// framed so the whole 256x256 plate is visible (like a fresh Bambu import).
+const fov = 45 * Math.PI / 180;
+const dist = (BED * 0.62) / Math.tan(fov / 2);
+const dir = new THREE.Vector3(-0.30, -0.86, 0.86).normalize();
+const target = new THREE.Vector3(0, 0, boxHeight / 2);
+camera.position.copy(dir.multiplyScalar(dist).add(target));
+controls.target.copy(target);
 controls.update();
 
 function animate() {{
