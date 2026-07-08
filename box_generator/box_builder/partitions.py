@@ -18,28 +18,13 @@ from typing import Optional
 import cadquery as cq
 
 
-def _make_wall_solid(x0, x1, y0, y1, z0, z1, top_fillet=0.0) -> cq.Workplane:
+def _make_wall_solid(x0, x1, y0, y1, z0, z1) -> cq.Workplane:
     dx, dy, dz = x1 - x0, y1 - y0, z1 - z0
-    wall = (
+    return (
         cq.Workplane("XY")
         .box(dx, dy, dz, centered=(True, True, False))
         .translate(((x0 + x1) / 2, (y0 + y1) / 2, z0))
     )
-    # Round the wall's top rim so the exposed divider edge isn't a sharp,
-    # hand-cutting corner (mirrors the box's own top-rim fillet). Bounded by
-    # half the wall thickness; guarded because very thin/short walls can make
-    # OCCT refuse the fillet.
-    if top_fillet > 0:
-        try:
-            wall = wall.faces(">Z").edges().fillet(top_fillet)
-        except Exception:
-            pass
-    return wall
-
-
-def _wall_top_fillet(thickness: float) -> float:
-    """Safe top-rim fillet radius for a divider of the given thickness."""
-    return thickness * 0.45
 
 
 def _build_recursive(node: Optional[dict], region: dict, floor_z: float, ceiling_z: float, out_walls, out_specs):
@@ -54,12 +39,10 @@ def _build_recursive(node: Optional[dict], region: dict, floor_z: float, ceiling
     z0 = floor_z
     z1 = ceiling_z if height is None else min(floor_z + height, ceiling_z)
 
-    top_fillet = _wall_top_fillet(thickness)
-
     if axis == "x":
         center = region["x0"] + at
         a, b = center - thickness / 2, center + thickness / 2
-        wall = _make_wall_solid(a, b, region["y0"], region["y1"], z0, z1, top_fillet)
+        wall = _make_wall_solid(a, b, region["y0"], region["y1"], z0, z1)
         out_walls.append(wall)
         out_specs.append(
             {
@@ -77,7 +60,7 @@ def _build_recursive(node: Optional[dict], region: dict, floor_z: float, ceiling
     else:
         center = region["y0"] + at
         a, b = center - thickness / 2, center + thickness / 2
-        wall = _make_wall_solid(region["x0"], region["x1"], a, b, z0, z1, top_fillet)
+        wall = _make_wall_solid(region["x0"], region["x1"], a, b, z0, z1)
         out_walls.append(wall)
         out_specs.append(
             {
