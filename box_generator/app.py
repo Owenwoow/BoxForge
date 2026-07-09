@@ -534,7 +534,15 @@ BED_SIZE = 256.0  # Bambu print bed 256x256, matches the length/width hard limit
 
 def _stl_viewer_html(stl_b64: str) -> str:
     return f"""
-<div id="viewer" style="width:100%;height:520px;background:#e9eaec;border-radius:8px;"></div>
+<style>
+/* The embed iframe itself still spans the full main-content width (that's
+Streamlit's doing, not overridable from here), but the viewer box inside it
+is capped and centered -- so widening the main area (e.g. collapsing the
+sidebar) just recenters the model instead of stretching it. Match the dark
+theme so the extra iframe margin blends in instead of showing a white bar. */
+html, body {{ margin: 0; background: transparent; }}
+</style>
+<div id="viewer" style="width:100%;max-width:720px;height:520px;background:#e9eaec;border-radius:8px;margin:0 auto;"></div>
 <script type="importmap">
 {{"imports": {{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
