@@ -195,6 +195,76 @@ That's it — you don't recreate the venv or reinstall packages; just activate a
 | Web preview area is blank | The 3D viewer loads Three.js from `cdn.jsdelivr.net`; if that's unreachable the model still generates (stats show below) — just download the STL and preview in your slicer. |
 | Slicer says a hollow face needs supports | Check you didn't set `corner_radius`/`edge_fillet` to extreme values creating unintended overhangs; the 45° pill vents themselves are support-free by design. |
 
+## 11. Public deployment with Docker (share it with others)
+
+Everything above runs the app for **one person on their own machine**. To host the web UI on a VPS for many people, use the bundled Docker setup — it packages the CadQuery/OpenCASCADE system libraries and applies the public-facing hardening for you.
+
+### 11.1 One command
+
+```bash
+# On the server, from the repo root:
+docker compose up -d --build
+
+# Web UI is now on   http://<server-ip>:8501
+# Logs:              docker compose logs -f
+# Update after a git pull:  docker compose up -d --build
+# Stop:              docker compose down
+```
+
+The first build downloads the CadQuery/OCP wheels and can take several minutes; subsequent builds are cached.
+
+### 11.2 Put TLS + a domain in front (recommended)
+
+Don't expose port `8501` directly. Terminate HTTPS with a reverse proxy and forward to the container. Streamlit uses WebSockets, so the proxy must pass the `Upgrade` headers.
+
+**Caddy** (`Caddyfile` — automatic HTTPS):
+
+```caddy
+box.example.com {
+    reverse_proxy localhost:8501
+}
+```
+
+**Nginx**:
+
+```nginx
+server {
+    server_name box.example.com;
+    location / {
+        proxy_pass http://127.0.0.1:8501;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Upgrade $http_upgrade;      # WebSocket
+        proxy_set_header Connection "upgrade";        # WebSocket
+        proxy_read_timeout 3600s;
+    }
+    # add TLS via certbot / your certs
+}
+```
+
+With a proxy on the same host, bind the app to localhost only by changing the compose port mapping to `"127.0.0.1:8501:8501"` so it isn't reachable from the open internet except through the proxy.
+
+### 11.3 What's hardened for public use
+
+- **Non-root container**, Streamlit telemetry off, dev toolbar & error stack traces hidden (`box_generator/.streamlit/config.toml`).
+- **Resource ceiling** in `docker-compose.yml` (`cpus`, `memory`, `pids_limit`) — CadQuery builds are CPU/RAM heavy, so this caps the damage from one abusive request. Tune the numbers to your VPS.
+- **Bounded caches & disk** — previews live in a size-limited `tmpfs`; old previews and cached models are pruned automatically, so disk/RAM don't creep up over time.
+- **Input abuse guards** (`box_builder/validate.py`) — the partition tree (pasteable as raw YAML in the UI) is capped in nesting depth and total dividers, and export filenames are stripped to a safe basename so they can't traverse the filesystem.
+
+### 11.4 Tuning the limits
+
+Edit `docker-compose.yml` before deploying to match your server:
+
+| Setting | Meaning | Raise if… |
+|---|---|---|
+| `cpus` / `memory` | per-container hard ceiling | builds feel slow on a beefy box |
+| `pids_limit` | max processes/threads | you see thread-limit errors |
+| `tmpfs /tmp size` | preview STL scratch space | you serve very large models |
+
+Model-cost caps live in code: `MAX_PARTITION_DEPTH` / `MAX_PARTITION_NODES` in `box_builder/validate.py`, and `MAX_PREVIEW_FILES` / cache size in `box_generator/app.py`.
+
 ---
 ---
 
@@ -394,3 +464,73 @@ streamlit run app.py              # …或：python main.py config.yaml
 | 命令行报 `box length/width must be <= 250.0mm` | 设计超过打印板允许尺寸——这是硬性拒绝，不会自动缩小。改小 `size`。 |
 | 网页预览区空白 | 3D 预览从 `cdn.jsdelivr.net` 加载 Three.js；无法访问时模型仍会生成（下方有统计信息）——直接下载 STL 用切片软件预览即可。 |
 | 切片软件提示某镂空面需要支撑 | 检查是不是把 `corner_radius`/`edge_fillet` 设成了极端值导致意外悬空；45° 药丸孔本身是免支撑设计。 |
+
+## 11. 用 Docker 部署到公网（供大家使用）
+
+上面所有步骤都是**单人在自己电脑上**跑。要把网页 UI 部署到 VPS 让很多人用，请用仓库自带的 Docker 方案——它已经打包好 CadQuery/OpenCASCADE 所需的系统库，并做了面向公网的安全加固。
+
+### 11.1 一条命令启动
+
+```bash
+# 在服务器上，仓库根目录执行：
+docker compose up -d --build
+
+# 网页 UI 现在跑在   http://<服务器IP>:8501
+# 查看日志：         docker compose logs -f
+# git pull 后更新：  docker compose up -d --build
+# 停止：             docker compose down
+```
+
+首次构建会下载 CadQuery/OCP 轮子，可能要几分钟；之后有缓存会很快。
+
+### 11.2 前面挂 TLS + 域名（推荐）
+
+不要把 `8501` 端口直接暴露到公网。用反向代理终结 HTTPS 再转发到容器。Streamlit 走 WebSocket，代理必须透传 `Upgrade` 头。
+
+**Caddy**（`Caddyfile`，自动申请 HTTPS 证书）：
+
+```caddy
+box.example.com {
+    reverse_proxy localhost:8501
+}
+```
+
+**Nginx**：
+
+```nginx
+server {
+    server_name box.example.com;
+    location / {
+        proxy_pass http://127.0.0.1:8501;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Upgrade $http_upgrade;      # WebSocket
+        proxy_set_header Connection "upgrade";        # WebSocket
+        proxy_read_timeout 3600s;
+    }
+    # 用 certbot 或自有证书配置 TLS
+}
+```
+
+代理和应用在同一台机器时，把 compose 的端口映射改成 `"127.0.0.1:8501:8501"`，让容器只监听本机，公网只能经反向代理访问。
+
+### 11.3 面向公网做了哪些加固
+
+- **容器非 root 运行**，关闭 Streamlit 遥测，隐藏开发工具栏和报错堆栈（`box_generator/.streamlit/config.toml`）。
+- **资源上限**（`docker-compose.yml` 里的 `cpus`、`memory`、`pids_limit`）——CadQuery 建模吃 CPU/内存，这层上限能把单个恶意请求的破坏限制住。按你的 VPS 调整数值。
+- **缓存与磁盘有界**——预览文件放在限定大小的 `tmpfs`，旧预览和缓存模型会自动清理，磁盘/内存不会随时间涨上去。
+- **输入滥用防护**（`box_builder/validate.py`）——隔板树（UI 里可粘贴原始 YAML）限制了嵌套深度和隔板总数；导出文件名会被裁成安全的纯文件名，无法穿越目录。
+
+### 11.4 调参
+
+部署前按服务器情况改 `docker-compose.yml`：
+
+| 配置项 | 含义 | 何时调大 |
+|---|---|---|
+| `cpus` / `memory` | 单容器硬上限 | 大配置服务器上建模嫌慢 |
+| `pids_limit` | 最大进程/线程数 | 出现线程上限报错 |
+| `tmpfs /tmp size` | 预览 STL 暂存空间 | 需要生成超大模型 |
+
+模型成本相关的上限在代码里：`box_builder/validate.py` 的 `MAX_PARTITION_DEPTH` / `MAX_PARTITION_NODES`，以及 `box_generator/app.py` 的 `MAX_PREVIEW_FILES` 和缓存大小。
