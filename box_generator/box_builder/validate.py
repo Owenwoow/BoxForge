@@ -5,6 +5,7 @@ rest of box_builder can consume without re-checking bounds.
 """
 from __future__ import annotations
 
+import re
 import sys
 from typing import Any, Optional
 
@@ -13,6 +14,22 @@ import yaml
 MAX_PLATE_XY = 250.0  # printer bed is 256x256, 6mm safety margin
 DEFAULT_Z_MAX = 250.0
 MIN_GAP = 0.8  # minimum bridge wall left between adjacent hollow holes
+
+# --- Abuse / resource-exhaustion guards (matter on a public deployment) ---
+# The partition tree can be supplied as free-form YAML (web "paste YAML" box or
+# CLI config), bypassing the UI sliders. Each internal node becomes an OCCT
+# boolean union -- an expensive CAD-kernel op -- and the validator/builder
+# recurse per node. Without a ceiling, a deeply nested or huge pasted tree pegs
+# the CPU for minutes and can overflow the recursion stack. These caps keep a
+# single request's cost bounded. Depth 8 already allows up to 2^8 = 256 cells,
+# far more than any real storage box needs.
+MAX_PARTITION_DEPTH = 8
+MAX_PARTITION_NODES = 200
+
+# Characters allowed in a user-supplied export filename. Anything else (path
+# separators, "..", control chars) is stripped so the name can never escape the
+# output directory when written to disk in CLI mode.
+_SAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._\- ]+")
 
 
 class ConfigError(ValueError):
@@ -107,10 +124,24 @@ def _resolve_split_at(at: Any, span: float) -> float:
 
 
 def _validate_partition_node(
-    node: Optional[dict], span_x: float, span_y: float, wall: float, box_height: float
+    node: Optional[dict], span_x: float, span_y: float, wall: float, box_height: float,
+    depth: int = 0, counter: Optional[dict] = None,
 ) -> Optional[dict]:
     if node is None:
         return None
+    if depth > MAX_PARTITION_DEPTH:
+        raise ConfigError(
+            f"partition tree too deep (max nesting {MAX_PARTITION_DEPTH})"
+        )
+    if counter is None:
+        counter = {"n": 0}
+    counter["n"] += 1
+    if counter["n"] > MAX_PARTITION_NODES:
+        raise ConfigError(
+            f"too many partition dividers (max {MAX_PARTITION_NODES})"
+        )
+    if not isinstance(node, dict):
+        raise ConfigError("partition node must be a mapping or null")
     split = node.get("split")
     if not split:
         raise ConfigError("partition node must have a 'split' key (or be null)")
@@ -144,13 +175,13 @@ def _validate_partition_node(
     if axis == "x":
         span_a = at - thickness / 2
         span_b = span_x - at - thickness / 2
-        child_a = _validate_partition_node(children_raw[0], span_a, span_y, wall, box_height)
-        child_b = _validate_partition_node(children_raw[1], span_b, span_y, wall, box_height)
+        child_a = _validate_partition_node(children_raw[0], span_a, span_y, wall, box_height, depth + 1, counter)
+        child_b = _validate_partition_node(children_raw[1], span_b, span_y, wall, box_height, depth + 1, counter)
     else:
         span_a = at - thickness / 2
         span_b = span_y - at - thickness / 2
-        child_a = _validate_partition_node(children_raw[0], span_x, span_a, wall, box_height)
-        child_b = _validate_partition_node(children_raw[1], span_x, span_b, wall, box_height)
+        child_a = _validate_partition_node(children_raw[0], span_x, span_a, wall, box_height, depth + 1, counter)
+        child_b = _validate_partition_node(children_raw[1], span_x, span_b, wall, box_height, depth + 1, counter)
 
     return {
         "split": {"axis": axis, "at": at, "thickness": thickness, "height": height},
@@ -202,8 +233,26 @@ def _validate_export(raw_export: dict) -> dict:
     tolerance = float(raw_export.get("tolerance", 0.1))
     if tolerance <= 0:
         raise ConfigError("export.tolerance must be positive")
-    filename = raw_export.get("filename", "box_output.stl")
+    filename = _sanitize_filename(raw_export.get("filename", "box_output.stl"))
     return {"format": fmt, "tolerance": tolerance, "filename": filename}
+
+
+def _sanitize_filename(raw: Any) -> str:
+    """Reduce a user-supplied export filename to a safe bare basename.
+
+    Strips any directory component (so it can't escape the output dir via
+    "../" or an absolute path in CLI mode) and any character outside a small
+    safe set, then guarantees a non-empty ".stl" name.
+    """
+    name = str(raw or "").strip().replace("\\", "/")
+    name = name.rsplit("/", 1)[-1]              # drop any path component
+    name = _SAFE_FILENAME_CHARS.sub("_", name)  # keep only safe chars
+    name = name.strip(". ")                      # no leading/trailing dots/spaces
+    if not name:
+        name = "box_output.stl"
+    if not name.lower().endswith(".stl"):
+        name += ".stl"
+    return name
 
 
 def validate_config(raw: dict) -> dict:

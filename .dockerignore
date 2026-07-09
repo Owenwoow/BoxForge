@@ -1,0 +1,16 @@
+# Keep the build context small and free of local/dev cruft.
+.git
+.gitignore
+.venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+*.stl
+box_generator/*.stl
+docs/
+*.md
+.claude/
+.streamlit/secrets.toml
+Dockerfile
+.dockerignore
+docker-compose.yml

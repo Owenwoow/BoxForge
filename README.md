@@ -75,6 +75,27 @@ python main.py config.yaml   # writes box_output.stl
 
 > ⚠️ Use **Python 3.10–3.13**. CadQuery has no prebuilt wheel for 3.14 yet, so it won't install there.
 
+## 🐳 Deploy on a public VPS (Docker, one command)
+
+For hosting the web UI for others to use, ship it with Docker instead of a bare `streamlit run`:
+
+```bash
+# From the repo root:
+docker compose up -d --build
+# -> web UI on http://<server-ip>:8501
+```
+
+Then put a TLS-terminating reverse proxy (Nginx / Caddy / Traefik) in front of port `8501`.
+
+The image is hardened for public exposure:
+
+- **Runs as a non-root user**, telemetry off, dev toolbar and error stack traces hidden.
+- **Hard CPU/RAM/PID ceiling** (`docker-compose.yml`) so one heavy CadQuery build can't take the host down — model building is deliberately expensive.
+- **Bounded caches & disk** — generated STL previews live in a size-capped `tmpfs`, and old previews/models are pruned automatically.
+- **Abuse guards in validation** — the partition tree (which can be pasted as raw YAML) is capped in depth and node count, and export filenames are sanitized against path traversal.
+
+See the full guide for reverse-proxy configs and tuning: [docs/DEPLOYMENT_AND_USAGE.md](docs/DEPLOYMENT_AND_USAGE.md)
+
 📖 **Full step-by-step deployment & usage guide:** [docs/DEPLOYMENT_AND_USAGE.md](docs/DEPLOYMENT_AND_USAGE.md)
 
 ## 📁 Project structure
