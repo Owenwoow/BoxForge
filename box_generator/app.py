@@ -185,17 +185,41 @@ PRESET_LABELS = {
 }
 
 
+# On a public deployment these caches are shared process-wide across every
+# visitor, so they must stay bounded or they become a slow memory/disk leak:
+# every distinct parameter combination anyone tries would otherwise be kept
+# forever. max_entries caps how many distinct models we retain; ttl expires
+# idle ones. MAX_PREVIEW_FILES bounds the matching STL files on disk.
+_SOLID_CACHE_MAX = 32
+_PREVIEW_TTL_SECONDS = 1800
+MAX_PREVIEW_FILES = 40
+
+
 @st.cache_resource(show_spinner=False)
 def _get_tmp_dir() -> Path:
     d = Path(tempfile.mkdtemp(prefix="boxforge_"))
     return d
 
 
-@st.cache_resource(show_spinner="正在建模 (CadQuery)...")
+@st.cache_resource(show_spinner="正在建模 (CadQuery)...", max_entries=_SOLID_CACHE_MAX, ttl=_PREVIEW_TTL_SECONDS)
 def _build_solid_cached(cfg_json: str):
     cfg = json.loads(cfg_json)
     solid = build_from_config(cfg)
     return solid
+
+
+def _prune_preview_dir(tmp_dir: Path, keep: int = MAX_PREVIEW_FILES) -> None:
+    """Keep only the newest `keep` preview STLs so the shared temp dir can't
+    grow without bound as visitors explore different parameter sets."""
+    try:
+        files = sorted(tmp_dir.glob("preview_*.stl"), key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return
+    for stale in files[keep:]:
+        try:
+            stale.unlink()
+        except OSError:
+            pass
 
 
 def _config_hash(cfg: dict) -> str:
@@ -671,6 +695,7 @@ def render_preview(solid, tmp_dir: Path, cfg_hash: str):
             solid,
             {"filename": str(stl_path), "tolerance": 0.05, "angular_tolerance": 0.1},
         )
+        _prune_preview_dir(tmp_dir)
 
     stl_bytes = stl_path.read_bytes()
     b64 = base64.b64encode(stl_bytes).decode("ascii")
