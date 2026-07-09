@@ -30,7 +30,12 @@ st.set_page_config(page_title="BoxForge", layout="wide")
 st.markdown(
     """
     <style>
-    section[data-testid="stSidebar"] {
+    /* Scoped to aria-expanded="true" only -- an unscoped width/min-width
+    override here fights Streamlit's own collapse mechanism (it still knows
+    the sidebar as 400px wide while collapsed, so the "expand" arrow control
+    that should sit at the far left ends up positioned using that stale
+    width instead, appearing stuck mid-page instead of at the edge). */
+    section[data-testid="stSidebar"][aria-expanded="true"] {
         width: 400px !important;
         min-width: 320px !important;
     }
@@ -483,24 +488,24 @@ def sidebar_inputs() -> dict:
             height = _synced_number_slider(T("f_height"), 10.0, 200.0, 40.0, 1.0, "height")
             wall = _synced_number_slider(T("f_wall"), 0.8, 6.0, 2.0, 0.1, "wall")
 
-        with st.expander(T("sec_fillet"), expanded=True):
-            corner_radius = st.slider(T("f_corner_radius"), 0.0, min(length, width) / 2, 8.0, 0.5)
+        with st.expander(T("sec_fillet"), expanded=False):
+            corner_radius = st.slider(T("f_corner_radius"), 0.0, min(length, width) / 2, 5.0, 0.5)
             edge_top = st.slider(T("f_edge_top"), 0.0, wall / 2, wall / 4, 0.05)
             edge_bottom = st.slider(T("f_edge_bottom"), 0.0, min(height, min(length, width) / 2), 1.0, 0.1)
 
-        with st.expander(T("sec_partitions"), expanded=True):
+        with st.expander(T("sec_partitions"), expanded=False):
             partitions_tree = partition_builder_ui(length, width, wall)
 
-        with st.expander(T("sec_hollow"), expanded=True):
+        with st.expander(T("sec_hollow"), expanded=False):
             hole_size = st.slider(T("h_hole_size"), 3.0, 20.0, 8.0, 0.5)
             border_mode = st.selectbox(T("h_border"), [T("h_border_auto"), T("h_border_custom")])
             border_value = "auto"
             if border_mode == T("h_border_custom"):
                 border_value = st.slider(T("h_border_value"), 0.0, 20.0, 3.0, 0.5)
-            hollow_bottom = st.checkbox(T("h_bottom"), value=True)
-            hollow_partitions = st.checkbox(T("h_partitions"), value=True)
+            hollow_bottom = st.checkbox(T("h_bottom"), value=False)
+            hollow_partitions = st.checkbox(T("h_partitions"), value=False)
 
-        with st.expander(T("sec_export"), expanded=True):
+        with st.expander(T("sec_export"), expanded=False):
             tolerance = st.select_slider(T("e_tolerance"), [0.5, 0.2, 0.1, 0.05, 0.02], value=0.1)
             filename = st.text_input(T("e_filename"), "box_output.stl")
 
