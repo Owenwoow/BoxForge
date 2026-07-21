@@ -1,4 +1,23 @@
+# Virtual environments
 .venv/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+
+# Generated models
 box_generator/*.stl
+*.stl
+
+# PyInstaller / packaging build output
+build/
+dist/
+*.spec.bak
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
