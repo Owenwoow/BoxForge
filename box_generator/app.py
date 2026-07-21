@@ -42,6 +42,48 @@ st.markdown(
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSlider"]) {
         align-items: center;
     }
+
+    /* Hover-reveal toggle groups (language/theme, see _toggle_bar). Streamlit
+    tags a container given an explicit key with a `st-key-<key>` class on its
+    wrapper -- that's the supported hook for scoping custom CSS to one
+    specific container instead of every st.columns(2) in the app. The button
+    row inside is hidden until the container itself is hovered, so the whole
+    pill area (trigger label + the space the dropdown occupies) is the
+    hover target, not just the one-line label. */
+    .st-key-bf_lang_toggle, .st-key-bf_theme_toggle {
+        position: relative;
+    }
+    .bf-toggle-trigger {
+        display: block;
+        text-align: center;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(128, 128, 128, 0.35);
+        background: var(--secondary-background-color);
+        color: var(--text-color);
+        font-size: 0.85rem;
+        cursor: default;
+        user-select: none;
+    }
+    .st-key-bf_lang_toggle div[data-testid="stHorizontalBlock"],
+    .st-key-bf_theme_toggle div[data-testid="stHorizontalBlock"] {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        z-index: 999;
+        margin-top: 2px;
+        padding: 4px;
+        border-radius: 6px;
+        border: 1px solid rgba(128, 128, 128, 0.35);
+        background: var(--secondary-background-color);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    }
+    .st-key-bf_lang_toggle:hover div[data-testid="stHorizontalBlock"],
+    .st-key-bf_theme_toggle:hover div[data-testid="stHorizontalBlock"] {
+        display: flex;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -53,16 +95,36 @@ def _inject_theme_css(theme: str) -> None:
 
     Streamlit only reads [theme] from config.toml at startup, so a live
     in-app toggle has to override the CSS custom properties Streamlit's own
-    generated styles are built on (--background-color etc.) -- most native
-    widgets already reference these vars, so overriding them re-themes the
-    whole widget set without touching Streamlit internals. The container/
-    sidebar/header backgrounds are set explicitly too since those are not
-    fully driven by the vars alone.
+    generated styles are built on (--background-color etc.). Plain markdown
+    text (headings, captions) has no color of its own and just inherits
+    from its container, so overriding --text-color and the container/
+    sidebar background already re-themes that. But widget labels
+    ([data-testid="stWidgetLabel"]) and native form controls (number/text
+    inputs, selects, textareas) get their own literal, non-inherited color
+    baked in for the light theme -- an inherited override never reaches
+    them, which is why they stayed a near-invisible dark-on-dark or a
+    jarring light-on-dark island after the rest of the page went dark. Only
+    those specific widgets need a targeted fix; everything else keeps
+    rendering with its normal, untouched color.
     """
     if theme == "dark":
         bg, sbg, text, primary = "#0e1117", "#1c1e24", "#fafafa", "#ff6b6b"
+        widget_fix = """
+        [data-testid="stWidgetLabel"] p {
+            color: rgba(250, 250, 250, 0.75) !important;
+        }
+        [data-testid="stNumberInputField"],
+        [data-testid="stTextInput"] input,
+        [data-testid="stTextArea"] textarea,
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="base-input"] {
+            background-color: #262a31 !important;
+            color: #fafafa !important;
+        }
+        """
     else:
         bg, sbg, text, primary = "#ffffff", "#f0f2f6", "#31333f", "#ff4b4b"
+        widget_fix = ""
     st.markdown(
         f"""
         <style>
@@ -80,6 +142,7 @@ def _inject_theme_css(theme: str) -> None:
             background-color: {sbg} !important;
             color: {text} !important;
         }}
+        {widget_fix}
         </style>
         """,
         unsafe_allow_html=True,
@@ -87,21 +150,55 @@ def _inject_theme_css(theme: str) -> None:
 
 
 def _toggle_bar() -> None:
-    """Two button-group toggles (language, theme) shown at the top of the
-    sidebar. Each click flips the relevant session_state value and reruns
-    immediately, so the new value is already in effect from the top of the
-    very next script run -- no one-rerun lag to work around."""
+    """Two hover-to-reveal toggle groups (language, theme) at the top of the
+    sidebar: hovering the pill reveals both choices, clicking one selects it
+    (see the .st-key-bf_*_toggle CSS at the top of the file). The options are
+    still plain st.button widgets going through Streamlit's normal
+    button+rerun cycle -- a plain <a href="?lang=..."> hover-menu would be
+    simpler CSS-wise, but clicking a link is a full page navigation that
+    starts a brand new Streamlit session, wiping every slider/partition the
+    user has already set up just to flip a display preference."""
     col_lang, col_theme = st.columns(2)
+
     with col_lang:
-        other_lang_label = "English" if st.session_state["lang"] == "zh" else "中文"
-        if st.button(f"🌐 {other_lang_label}", key="lang_toggle_btn", use_container_width=True):
-            st.session_state["lang"] = "en" if st.session_state["lang"] == "zh" else "zh"
-            st.rerun()
+        with st.container(key="bf_lang_toggle"):
+            current = "🌐 中文" if st.session_state["lang"] == "zh" else "🌐 English"
+            st.markdown(f'<div class="bf-toggle-trigger">{current} ▾</div>', unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button(
+                    "中文", key="lang_btn_zh", use_container_width=True,
+                    type="primary" if st.session_state["lang"] == "zh" else "secondary",
+                ):
+                    st.session_state["lang"] = "zh"
+                    st.rerun()
+            with c2:
+                if st.button(
+                    "English", key="lang_btn_en", use_container_width=True,
+                    type="primary" if st.session_state["lang"] == "en" else "secondary",
+                ):
+                    st.session_state["lang"] = "en"
+                    st.rerun()
+
     with col_theme:
-        theme_label = T("theme_to_dark") if st.session_state["theme"] == "light" else T("theme_to_light")
-        if st.button(theme_label, key="theme_toggle_btn", use_container_width=True):
-            st.session_state["theme"] = "dark" if st.session_state["theme"] == "light" else "light"
-            st.rerun()
+        with st.container(key="bf_theme_toggle"):
+            current = T("theme_light") if st.session_state["theme"] == "light" else T("theme_dark")
+            st.markdown(f'<div class="bf-toggle-trigger">{current} ▾</div>', unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button(
+                    T("theme_light"), key="theme_btn_light", use_container_width=True,
+                    type="primary" if st.session_state["theme"] == "light" else "secondary",
+                ):
+                    st.session_state["theme"] = "light"
+                    st.rerun()
+            with c2:
+                if st.button(
+                    T("theme_dark"), key="theme_btn_dark", use_container_width=True,
+                    type="primary" if st.session_state["theme"] == "dark" else "secondary",
+                ):
+                    st.session_state["theme"] = "dark"
+                    st.rerun()
 
 
 if "lang" not in st.session_state:
@@ -168,8 +265,8 @@ STRINGS = {
         "config_error": "配置错误: {err}",
         "model_error": "建模失败: {err}",
         "preview_unavailable_note": "",
-        "theme_to_dark": "🌙 深色模式",
-        "theme_to_light": "☀️ 浅色模式",
+        "theme_light": "☀️ 浅色模式",
+        "theme_dark": "🌙 深色模式",
         "footer_project": "项目地址",
         "footer_disclaimer": "免责声明：本工具生成的模型仅供参考，请在打印前自行核实尺寸、公差与结构强度是否满足实际需求；因使用本工具及其生成文件造成的任何直接或间接损失，作者不承担责任。",
     },
@@ -224,8 +321,8 @@ STRINGS = {
         "config_error": "Config error: {err}",
         "model_error": "Modeling failed: {err}",
         "preview_unavailable_note": "",
-        "theme_to_dark": "🌙 Dark mode",
-        "theme_to_light": "☀️ Light mode",
+        "theme_light": "☀️ Light mode",
+        "theme_dark": "🌙 Dark mode",
         "footer_project": "Project",
         "footer_disclaimer": "Disclaimer: models generated by this tool are for reference only. Verify dimensions, tolerances, and structural strength yourself before printing. The author assumes no liability for any direct or indirect loss arising from the use of this tool or its output.",
     },
@@ -764,7 +861,12 @@ def render_preview(solid, tmp_dir: Path, cfg_hash: str):
 
     stl_bytes = stl_path.read_bytes()
     b64 = base64.b64encode(stl_bytes).decode("ascii")
-    st.components.v1.html(_stl_viewer_html(b64, st.session_state["theme"]), height=650)
+    theme = st.session_state["theme"]
+    # Keyed container forces a fresh mount of the iframe on theme flip instead
+    # of an in-place prop update, so there's no ambiguity about whether the
+    # already-running Three.js scene inside picks up the new background.
+    with st.container(key=f"stl_viewer_{theme}"):
+        st.components.v1.html(_stl_viewer_html(b64, theme), height=650)
 
     bb = solid.val().BoundingBox()
     c1, c2, c3 = st.columns(3)
