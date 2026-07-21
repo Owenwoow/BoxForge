@@ -43,6 +43,18 @@ st.markdown(
         align-items: center;
     }
 
+    /* Kill the expander header's `background-color 0.15s` transition in BOTH
+    themes. Because Streamlit reruns the script (and re-applies styles) on
+    every interaction, that transition keeps restarting from its previous
+    value and never settles on the new one -- so the header would get stuck
+    on the OLD theme's color after a light<->dark toggle (dark bar left over
+    in light mode, or vice versa). With no transition, each theme's color
+    applies instantly and lands cleanly. The dark-mode color override itself
+    lives in _inject_theme_css. */
+    [data-testid="stExpander"] summary {
+        transition: none !important;
+    }
+
     /* Hover-reveal toggle groups (language/theme, see _toggle_bar). Streamlit
     tags a container given an explicit key with a `st-key-<key>` class on its
     wrapper -- that's the supported hook for scoping custom CSS to one
@@ -109,16 +121,63 @@ def _inject_theme_css(theme: str) -> None:
     """
     if theme == "dark":
         bg, sbg, text, primary = "#0e1117", "#1c1e24", "#fafafa", "#ff6b6b"
+        # Each block below targets a Streamlit-baked light color that an
+        # inherited --text-color / --*-background-color override can't reach.
         widget_fix = """
-        [data-testid="stWidgetLabel"] p {
+        /* Widget labels ("长 (mm)" etc.) -- baked dark-on-light color. */
+        [data-testid="stWidgetLabel"] p,
+        [data-testid="stWidgetLabel"] label {
             color: rgba(250, 250, 250, 0.75) !important;
         }
+        /* Expander header: Streamlit fills the <summary> with a baked light
+        secondary-background ONLY while the expander is open, which is why it
+        looked white when expanded but normal when collapsed. (The
+        transition that would otherwise trap this override is already killed
+        for both themes in the base CSS block above.) */
+        [data-testid="stExpander"] summary {
+            background-color: #1c1e24 !important;
+            color: #fafafa !important;
+        }
+        [data-testid="stExpander"] summary:hover {
+            background-color: #262a31 !important;
+            color: #fafafa !important;
+        }
+        /* Native inputs + their bordered container wrappers, plus the
+        selectbox's closed control box (this Streamlit build tags neither the
+        control nor its popover with data-baseweb, so it's reached by testid
+        path instead). */
+        [data-testid="stNumberInputContainer"],
         [data-testid="stNumberInputField"],
+        [data-testid="stTextInputRootElement"],
         [data-testid="stTextInput"] input,
         [data-testid="stTextArea"] textarea,
+        [data-testid="stSelectbox"] > div > div,
         div[data-baseweb="select"] > div,
         div[data-baseweb="base-input"] {
             background-color: #262a31 !important;
+            color: #fafafa !important;
+        }
+        /* Selectbox dropdown list -- renders in a body-level portal, so it
+        can't be reached through the sidebar subtree. Defensive across markup
+        variants; a no-op if the version uses none of these. */
+        ul[role="listbox"],
+        [data-baseweb="popover"] [role="option"],
+        [data-baseweb="menu"] li {
+            background-color: #262a31 !important;
+            color: #fafafa !important;
+        }
+        /* Secondary (unselected) buttons: baked near-white bg AND near-white
+        text = invisible in dark mode. This is what made the toggle dropdown's
+        unselected option a blank white box. A subtle border keeps it readable
+        against the equally-dark dropdown/sidebar behind it. */
+        [data-testid="stBaseButton-secondary"] {
+            background-color: #262a31 !important;
+            color: #fafafa !important;
+            border: 1px solid rgba(250, 250, 250, 0.25) !important;
+        }
+        [data-testid="stBaseButton-secondary"]:hover {
+            background-color: #31363f !important;
+            border-color: rgba(250, 250, 250, 0.45) !important;
             color: #fafafa !important;
         }
         """
