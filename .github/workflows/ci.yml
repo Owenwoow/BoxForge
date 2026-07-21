@@ -1,0 +1,44 @@
+name: CI
+
+# Fast per-push checks: the code imports, the CLI produces an STL, and the full
+# CadQuery modeling path works from source. Runs on every push/PR to main & dev.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install OCP system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 libglu1-mesa libx11-6 libxext6 libxrender1 \
+            libsm6 libice6 libfontconfig1 libglib2.0-0 libgomp1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax check
+        run: python -m compileall box_generator
+
+      - name: Modeling self-test (full CadQuery path)
+        run: python box_generator/desktop_app.py --selftest
+
+      - name: CLI produces an STL
+        working-directory: box_generator
+        run: |
+          python main.py config.yaml
+          test -f box_output.stl && echo "STL exported OK"
