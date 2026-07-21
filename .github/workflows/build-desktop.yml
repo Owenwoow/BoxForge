@@ -1,8 +1,8 @@
 name: Build desktop apps
 
 # Builds the standalone BoxForge desktop app (Streamlit UI packaged with
-# PyInstaller) for every supported platform, smoke-tests each binary, and — on
-# a version tag — attaches the archives to a GitHub Release.
+# PyInstaller) for every supported platform, smoke-tests each binary, and -- on
+# a version tag -- attaches the archives to a GitHub Release.
 #
 #   - Push a tag like `v0.1.0`  -> build all platforms + publish a Release.
 #   - Run manually (Actions tab) -> build all platforms, artifacts only.
