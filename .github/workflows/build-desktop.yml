@@ -27,10 +27,12 @@ jobs:
             label: windows-x64
           - os: ubuntu-latest
             label: linux-amd64
-          - os: macos-13 # Intel runner
-            label: macos-x64
           - os: macos-latest # Apple Silicon runner
             label: macos-arm64
+          # macOS Intel (macos-13) is intentionally omitted: those runners are
+          # scarce and routinely leave the whole release blocked in the queue.
+          # Apple Silicon covers all Macs sold since late 2020; Intel-Mac users
+          # can run from source or via Docker.
 
     steps:
       - uses: actions/checkout@v4

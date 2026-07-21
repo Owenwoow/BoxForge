@@ -25,7 +25,7 @@ First public release.
   the web UI locally with no Python install, plus a `--selftest` mode.
 - **GitHub Actions**: CI on every push, and a release workflow that builds and
   smoke-tests desktop apps for Windows x64, Linux amd64, and macOS
-  (Apple Silicon + Intel), attaching them to the GitHub Release.
+  (Apple Silicon), attaching them to the GitHub Release.
 - **Docker** one-command public deployment (`docker compose up -d --build`)
   with a hardened, non-root image and resource ceilings.
 - Public-deploy safety: geometry-limit clamping, filename sanitization, and

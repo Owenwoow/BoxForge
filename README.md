@@ -75,7 +75,8 @@ The easiest way for non-developers. Download the prebuilt app for your OS from t
 | Windows x64 | `BoxForge-windows-x64.zip` |
 | Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
 | macOS (Apple Silicon) | `BoxForge-macos-arm64.tar.gz` |
-| macOS (Intel) | `BoxForge-macos-x64.tar.gz` |
+
+> Intel Macs: run [from source](#option-2--run-from-source) or via [Docker](#option-3--docker-public-deploy).
 
 See the [Desktop app guide](docs/desktop-app.md) for run instructions and OS security prompts.
 

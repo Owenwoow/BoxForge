@@ -75,7 +75,8 @@ BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印�
 | Windows x64 | `BoxForge-windows-x64.zip` |
 | Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
 | macOS（Apple 芯片） | `BoxForge-macos-arm64.tar.gz` |
-| macOS（Intel） | `BoxForge-macos-x64.tar.gz` |
+
+> Intel 芯片 Mac：请 [从源码运行](#方式二--从源码运行) 或用 [Docker](#方式三--docker公网部署)。
 
 运行方法和系统安全提示见 [桌面版指南](docs/desktop-app.zh-CN.md)。
 

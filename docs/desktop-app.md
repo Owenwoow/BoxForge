@@ -13,9 +13,10 @@ Get the archive for your platform from the [**latest release**](https://github.c
 | Windows x64 | `BoxForge-windows-x64.zip` |
 | Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
 | macOS (Apple Silicon) | `BoxForge-macos-arm64.tar.gz` |
-| macOS (Intel) | `BoxForge-macos-x64.tar.gz` |
 
 > The download is large (~300–900 MB) because it contains a full CAD kernel.
+>
+> **Intel Macs** aren't shipped as a prebuilt app — run [from source](installation.md) or via [Docker](deployment.md) instead.
 
 ## 2. Unzip & run
 
@@ -37,7 +38,7 @@ tar -xzf BoxForge-linux-amd64.tar.gz
 
 **macOS**
 ```bash
-tar -xzf BoxForge-macos-arm64.tar.gz   # or -x64 on Intel
+tar -xzf BoxForge-macos-arm64.tar.gz
 ./BoxForge/BoxForge
 ```
 

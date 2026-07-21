@@ -13,9 +13,10 @@
 | Windows x64 | `BoxForge-windows-x64.zip` |
 | Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
 | macOS（Apple 芯片） | `BoxForge-macos-arm64.tar.gz` |
-| macOS（Intel） | `BoxForge-macos-x64.tar.gz` |
 
 > 因为内含完整 CAD 内核，下载体积较大（约 300–900 MB）。
+>
+> **Intel 芯片 Mac** 不提供预编译版——请 [从源码运行](installation.zh-CN.md) 或用 [Docker](deployment.zh-CN.md)。
 
 ## 2. 解压并运行
 
@@ -37,7 +38,7 @@ tar -xzf BoxForge-linux-amd64.tar.gz
 
 **macOS**
 ```bash
-tar -xzf BoxForge-macos-arm64.tar.gz   # Intel 用 -x64
+tar -xzf BoxForge-macos-arm64.tar.gz
 ./BoxForge/BoxForge
 ```
 
