@@ -2,7 +2,7 @@ name: Build desktop apps
 
 # Builds the standalone BoxForge desktop app (Streamlit UI packaged with
 # PyInstaller) for every supported platform, smoke-tests each binary, and -- on
-# a version tag -- attaches the archives to a GitHub Release.
+# a version tag -- publishes the archives to a single GitHub Release.
 #
 #   - Push a tag like `v0.1.0`  -> build all platforms + publish a Release.
 #   - Run manually (Actions tab) -> build all platforms, artifacts only.
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # needed to create/attach the Release on tag builds
+  contents: write # needed to create the Release on tag builds
 
 jobs:
   build:
@@ -83,9 +83,23 @@ jobs:
           path: BoxForge-${{ matrix.label }}.*
           if-no-files-found: error
 
-      - name: Attach to Release (tag builds only)
-        if: startsWith(github.ref, 'refs/tags/')
+  # Single job publishes all archives at once. A per-matrix-job release step
+  # would have every platform race to create/update the same Release
+  # concurrently (one wins, the others 404 on the asset upload), so collecting
+  # the artifacts and releasing once is the reliable pattern.
+  release:
+    name: Publish Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: BoxForge-${{ matrix.label }}.*
+          files: artifacts/**/*
           generate_release_notes: true
