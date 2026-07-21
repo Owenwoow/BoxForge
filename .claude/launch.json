@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "boxforge-streamlit",
+      "runtimeExecutable": "E:\\Code\\BoxForge\\venv\\Scripts\\streamlit.exe",
+      "runtimeArgs": ["run", "E:\\Code\\BoxForge\\box_generator\\app.py", "--server.headless=true", "--server.port=39421"],
+      "port": 39421
+    }
+  ]
+}
