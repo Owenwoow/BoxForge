@@ -11,7 +11,7 @@
 
 ## Checklist / 自检
 - [ ] `python -m compileall box_generator` passes
-- [ ] `python box_generator/desktop_app.py --selftest` passes
+- [ ] `ruff check .` and `pytest` pass
 - [ ] Docs updated if behavior/parameters changed / 若行为或参数有变，已更新文档
 - [ ] One logical change; commit messages follow the convention / 单一改动，提交信息符合规范
 

@@ -23,7 +23,7 @@ Paste the relevant `config.yaml` or the partition YAML. / 贴出相关的 `confi
 
 **Environment / 环境**
 - OS: [e.g. Windows 11 / Ubuntu 24.04 / macOS 14]
-- How you ran it: [Desktop app / from source / Docker]
+- How you ran it: [Codespaces / from source]
 - Python version (if from source): [e.g. 3.13]
 - BoxForge version or commit: 
 
