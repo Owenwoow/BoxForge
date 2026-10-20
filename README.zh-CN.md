@@ -7,6 +7,7 @@
 ### 👉 [在线使用：owenwoow.github.io/BoxForge](https://owenwoow.github.io/BoxForge/)
 
 [![CI/CD](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml)
+[![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 <img src="docs/images/hero_render.png" alt="BoxForge 示例盒子" width="640">
@@ -21,7 +22,9 @@
 
 - [这是什么？](#这是什么)
 - [功能特性](#功能特性)
+- [界面截图](#界面截图)
 - [怎么用](#怎么用)
+- [自行部署](#自行部署)
 - [架构](#架构)
 - [本地开发](#本地开发)
 - [文档](#文档)
@@ -48,6 +51,10 @@ BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印�
 - **中英双语 + 明暗主题**，手机上也能用。
 - **输入加固** —— 几何上限自动钳制（并提示）、文件名净化、隔板树深度/数量有上限。
 
+## 界面截图
+
+![BoxForge 网页界面](docs/images/screenshot-zh.png)
+
 ## 怎么用
 
 1. 打开 **<https://owenwoow.github.io/BoxForge/>**（首次需下载约 7 MB 的 CAD 内核，之后走浏览器缓存）。
@@ -55,6 +62,13 @@ BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印�
 3. 统计信息里「几何是否合法」显示 `OK` 后，点 **下载 STL**，拖进切片软件打印。
 
 每个参数的含义、取值范围和常见问题见 [使用手册](docs/usage.zh-CN.md)。
+
+## 自行部署
+
+BoxForge 是纯静态网站，不需要任何后端：
+
+- **Fork 后用自己的 GitHub Pages**：Fork 仓库 → Settings → Pages → Source 选 **GitHub Actions** → 推送到 `main`，`ci-cd.yml` 会自动测试并发布到 `https://<你的用户名>.github.io/BoxForge/`。
+- **放到任意静态主机**：从 [Releases](https://github.com/Owenwoow/BoxForge/releases/latest) 下载 `boxforge-site-vX.Y.Z.zip`，解压到 Nginx / Caddy / 对象存储等任意静态文件服务即可。站点使用相对路径，放在根路径或子路径都能用；服务器需能以 `application/wasm` 类型返回 `.wasm` 文件（主流服务器默认支持）。
 
 ## 架构
 
@@ -77,7 +91,7 @@ flowchart LR
 - **CI/CD 全在 GitHub Actions**：每个 PR 都要通过类型检查、单元测试、构建和真实浏览器端到端测试才能合入 `main`；合入后自动发布到 Pages。打 `vX.Y.Z` 标签会生成 Release，并附带打包好的站点 zip。
 - **建模核心与界面分离**：`src/core/` 是不依赖 DOM 的纯 TypeScript，在 Node 里就能测试；单元测试用旧版 Python/CadQuery 实现算出的体积做基准，保证移植后的几何结果一致。
 
-> 旧版（Python + CadQuery + Streamlit，含命令行与桌面版）完整保存在 [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) 分支。
+> 旧版（Python + CadQuery + Streamlit，含命令行与桌面版）完整保存在 [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) 分支；其桌面版安装包见 [v0.1.0 Release](https://github.com/Owenwoow/BoxForge/releases/tag/v0.1.0)。从 v0.2.0 起为浏览器版。
 
 ## 本地开发
 
@@ -119,7 +133,7 @@ BoxForge/
 │   ├── worker/                # 后台建模线程（Web Worker）
 │   └── ui/                    # React 界面、Three.js 预览、中英文案
 ├── e2e/                       # Playwright 端到端测试
-├── docs/                      # 使用手册（English + 简体中文）
+├── docs/                      # 使用手册（English + 简体中文）、截图
 ├── index.html · vite.config.ts · playwright.config.ts
 └── .github/workflows/         # ci-cd.yml（测试 + 部署 Pages）· release.yml（发版）
 ```

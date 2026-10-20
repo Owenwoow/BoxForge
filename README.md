@@ -7,6 +7,7 @@
 ### 👉 [Use it online: owenwoow.github.io/BoxForge](https://owenwoow.github.io/BoxForge/)
 
 [![CI/CD](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml)
+[![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 <img src="docs/images/hero_render.png" alt="BoxForge sample box" width="640">
@@ -21,7 +22,9 @@
 
 - [What is this?](#what-is-this)
 - [Features](#features)
+- [Screenshot](#screenshot)
 - [How to use it](#how-to-use-it)
+- [Self-hosting](#self-hosting)
 - [Architecture](#architecture)
 - [Local development](#local-development)
 - [Documentation](#documentation)
@@ -48,6 +51,10 @@ Geometry is built with [OpenCASCADE](https://dev.opencascade.org/) — a real B-
 - **Bilingual (中文 / English) + light/dark theme**, works on phones.
 - **Hardened input** — geometry limits are clamped (with a notice), filenames sanitized, divider-tree depth/size capped.
 
+## Screenshot
+
+![BoxForge web UI](docs/images/screenshot-en.png)
+
 ## How to use it
 
 1. Open **<https://owenwoow.github.io/BoxForge/>** (the first visit downloads the ~7 MB CAD kernel; later visits use the browser cache).
@@ -55,6 +62,13 @@ Geometry is built with [OpenCASCADE](https://dev.opencascade.org/) — a real B-
 3. Once **Valid geometry** shows `OK`, click **Download STL** and drop it into your slicer.
 
 Every parameter, its limits, and common issues are covered in the [Usage reference](docs/usage.md).
+
+## Self-hosting
+
+BoxForge is a fully static site — no backend needed:
+
+- **Your own GitHub Pages** — fork the repo → Settings → Pages → Source: **GitHub Actions** → push to `main`; `ci-cd.yml` tests and publishes to `https://<your-user>.github.io/BoxForge/`.
+- **Any static host** — download `boxforge-site-vX.Y.Z.zip` from [Releases](https://github.com/Owenwoow/BoxForge/releases/latest) and unzip it onto Nginx, Caddy, object storage, etc. Asset paths are relative, so it works at the root or under a sub-path; the server must serve `.wasm` files as `application/wasm` (mainstream servers do by default).
 
 ## Architecture
 
@@ -77,7 +91,7 @@ flowchart LR
 - **All CI/CD on GitHub Actions** — every PR must pass typecheck, unit tests, the build, and a real-browser E2E run before it can merge into `main`; merging deploys to Pages automatically. Pushing a `vX.Y.Z` tag publishes a Release with the built site attached as a zip.
 - **Modeling core separate from the UI** — `src/core/` is DOM-free TypeScript tested in Node; the geometry tests pin volumes produced by the original Python/CadQuery implementation, so the port stays exact.
 
-> The previous version (Python + CadQuery + Streamlit, with CLI and desktop app) is preserved on the [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) branch.
+> The previous version (Python + CadQuery + Streamlit, with CLI and desktop app) is preserved on the [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) branch; its desktop builds are on the [v0.1.0 Release](https://github.com/Owenwoow/BoxForge/releases/tag/v0.1.0). The browser version starts at v0.2.0.
 
 ## Local development
 
@@ -119,7 +133,7 @@ BoxForge/
 │   ├── worker/                # background modeling thread (Web Worker)
 │   └── ui/                    # React UI, Three.js preview, zh/en strings
 ├── e2e/                       # Playwright end-to-end tests
-├── docs/                      # usage reference (English + 简体中文)
+├── docs/                      # usage reference (English + 简体中文), screenshots
 ├── index.html · vite.config.ts · playwright.config.ts
 └── .github/workflows/         # ci-cd.yml (test + deploy Pages) · release.yml
 ```
