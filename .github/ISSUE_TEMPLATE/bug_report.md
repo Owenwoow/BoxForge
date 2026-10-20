@@ -13,7 +13,7 @@ A clear description of what went wrong. / 清楚地描述哪里出了问题。
 2. …
 
 **Config / 配置**
-Paste the relevant `config.yaml` or the partition YAML. / 贴出相关的 `config.yaml` 或隔板 YAML。
+Paste the config YAML (Export & config → Download config YAML) or a share link. / 贴出配置 YAML（导出与配置 → 下载配置 YAML）或分享链接。
 
 ```yaml
 
@@ -23,11 +23,11 @@ Paste the relevant `config.yaml` or the partition YAML. / 贴出相关的 `confi
 
 **Environment / 环境**
 - OS: [e.g. Windows 11 / Ubuntu 24.04 / macOS 14]
-- How you ran it: [Codespaces / from source]
-- Python version (if from source): [e.g. 3.13]
+- Browser + version: [e.g. Chrome 140 / Safari 19]
+- Where: [online site / local `npm run dev`]
 - BoxForge version or commit: 
 
-**Logs / error output / 日志或报错**
+**Error message or browser console output / 页面报错或浏览器控制台输出**
 
 ```
 

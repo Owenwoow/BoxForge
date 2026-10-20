@@ -2,11 +2,11 @@
 
 [English](usage.md) · [简体中文](usage.zh-CN.md) · [← README](../README.md)
 
-This guide covers every parameter: what it does, its limits, and how errors are handled. For setup, see the [Installation guide](installation.md).
+This guide covers every parameter: what it does, its limits, and how errors are handled. Use it online at <https://owenwoow.github.io/BoxForge/> — nothing to install.
 
 ## 1. The YAML config
 
-In CLI mode you edit `box_generator/config.yaml`; the web UI's partition text box accepts the same YAML. Full field reference:
+The **Export & config** group can **download** the current design as YAML and **import** a YAML file to restore one; the Dividers group's advanced option shows/accepts just the divider-tree YAML. Full field reference:
 
 ```yaml
 box:
@@ -58,7 +58,7 @@ export:
 | `hollow.border` | `< 0` errors | `auto` → `max(wall, hole_size*0.5)` |
 | `export.tolerance` | `<= 0` errors | — |
 
-In the CLI, a hard limit prints `[error] ...` and exits non-zero; a soft limit prints `[warn] ...` to stderr and continues. In the web UI, hard limits show a red error box at the top of the page.
+A hard limit shows a red error box at the top of the page and disables **Download STL** until the parameters are valid again. A soft limit still builds the model and lists what was **auto-corrected** in a yellow bar.
 
 ## 2. Partition tree syntax
 
@@ -118,9 +118,9 @@ The top rim rounds **both** the outer and inner lip. The two fillets eat into th
 
 Some `split.at` + `thickness/2` exceeds its region. Check the region's actual available width (what's left after the parent cut) and move `at` toward the center.
 
-### 4.4 The web 3D preview is blank
+### 4.4 Slow first load / blank 3D preview
 
-The preview uses browser-side Three.js loaded from a CDN. If `cdn.jsdelivr.net` is unreachable the preview fails, but the model still builds correctly (size/volume/validity stats still show) — just download the STL.
+The modeling kernel (OpenCASCADE compiled to WebAssembly) is a ~7 MB download the first time, then cached by the browser. If it stays on "Loading the CAD kernel" or reports a kernel error, use a recent Chrome / Edge / Firefox / Safari. A blank preview with normal stats usually means WebGL (hardware acceleration) is disabled — the model itself is fine, just download the STL.
 
 ## 5. Web UI control map
 
@@ -132,7 +132,7 @@ The preview uses browser-side Three.js loaded from a CDN. If `cdn.jsdelivr.net` 
 | Fillets | bottom rim | `edge_fillet.bottom` | cap tracks height/width |
 | Partitions | presets / add buttons / YAML | `partitions` | click-to-build, or write YAML directly |
 | Vents | hole size / border / bottom / dividers | `hollow.*` | "custom" border reveals a slider |
-| Export | STL tolerance / filename | `export.*` | — |
+| Export & config | STL tolerance / filename / download·import YAML / copy share link | `export.*` | the share link encodes the whole config in the URL, so whoever opens it gets the same design |
 
 Main area: **3D preview** (drag to rotate, scroll to zoom; rebuilds on any change), **stats** (outer size / volume / valid geometry — `OK` = safe to export, `FAIL` = current params produced invalid geometry, adjust them), and the **Download STL** button.
 

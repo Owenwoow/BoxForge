@@ -1,6 +1,0 @@
-# Stage 1: modeling core
-cadquery>=2.4
-pyyaml
-
-# Stage 2: Streamlit web UI (3D preview uses Three.js via CDN, no extra python deps)
-streamlit

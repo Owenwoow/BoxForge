@@ -1,4 +1,0 @@
-# Dev / CI tooling on top of the runtime deps.
--r requirements.txt
-pytest
-ruff

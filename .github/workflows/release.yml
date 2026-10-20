@@ -1,6 +1,7 @@
 name: Release
 
-# Push a tag like `v0.2.0` -> GitHub Release with auto-generated notes.
+# Push a tag like `v0.2.0` -> GitHub Release with generated notes and the
+# built static site attached (unzip it onto any static host to self-host).
 # Tags with a suffix (`v0.2.0-rc.1`) are published as pre-releases.
 on:
   push:
@@ -9,11 +10,26 @@ on:
 jobs:
   release:
     name: Publish Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Package site
+        run: cd dist && zip -qr "../boxforge-site-${GITHUB_REF_NAME}.zip" .
+
       - uses: softprops/action-gh-release@v3
         with:
+          files: boxforge-site-*.zip
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
