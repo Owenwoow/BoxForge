@@ -4,7 +4,7 @@
 
 This guide takes you from a clean machine to a printable STL, with an emphasis on setting up a Python virtual environment. No prior Python-tooling experience assumed.
 
-> Prefer no setup at all? Grab the [desktop app](desktop-app.md) instead — no Python required.
+> Prefer no setup at all? Run it online in [GitHub Codespaces](https://codespaces.new/Owenwoow/BoxForge?quickstart=1) instead — see the [README](../README.md#option-1--online-in-github-codespaces).
 
 ## 1. Prerequisites
 

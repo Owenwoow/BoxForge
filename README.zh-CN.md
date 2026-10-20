@@ -4,9 +4,8 @@
 
 **参数化 3D 收纳盒生成器 —— 圆角、递归隔板、45° 免支撑药丸镂空，一键导出可打印 STL。**
 
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-2ea44f?logo=github)](https://codespaces.new/Owenwoow/BoxForge?quickstart=1)
 [![CI](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml)
-[![Build desktop apps](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml)
-[![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?include_prereleases&sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
@@ -24,9 +23,8 @@
 - [功能特性](#功能特性)
 - [界面截图](#界面截图)
 - [快速开始](#快速开始)
-  - [方式一 —— 桌面版（无需 Python）](#方式一--桌面版无需-python)
+  - [方式一 —— 在 GitHub Codespaces 在线使用](#方式一--在-github-codespaces-在线使用)
   - [方式二 —— 从源码运行](#方式二--从源码运行)
-  - [方式三 —— Docker（公网部署）](#方式三--docker公网部署)
 - [文档](#文档)
 - [项目结构](#项目结构)
 - [参与贡献](#参与贡献)
@@ -66,19 +64,15 @@ BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印�
 
 ## 快速开始
 
-### 方式一 —— 桌面版（无需 Python）
+### 方式一 —— 在 GitHub Codespaces 在线使用
 
-对非开发者最简单。从 [**最新 Release**](https://github.com/Owenwoow/BoxForge/releases/latest) 下载对应系统的预编译版，解压后运行 `BoxForge`——它会自动启动本地服务并在浏览器打开网页界面。不需要 Python、不需要 `pip`。
+什么都不用装，在浏览器里用 GitHub 的云端机器运行：
 
-| 平台 | 下载 |
-|---|---|
-| Windows x64 | `BoxForge-windows-x64.zip` |
-| Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
-| macOS（Apple 芯片） | `BoxForge-macos-arm64.tar.gz` |
+1. 打开 **<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>**（需登录 GitHub），点 **Create codespace**。
+2. 等首次初始化（安装 CadQuery，约 2 分钟），网页界面会自动启动并在预览标签页打开。
+3. 想在完整浏览器标签页打开或分享给别人：打开 **Ports（端口）** 面板，找到 `8501` 端口，打开它的转发地址（`https://<codespace名>-8501.app.github.dev`）。默认只有你自己能访问；右键 → **Port Visibility → Public** 后别人也能打开。
 
-> Intel 芯片 Mac：请 [从源码运行](#方式二--从源码运行) 或用 [Docker](#方式三--docker公网部署)。
-
-运行方法和系统安全提示见 [桌面版指南](docs/desktop-app.zh-CN.md)。
+> Codespace 是临时云端机器：闲置约 30 分钟会自动停止（可在 <https://github.com/codespaces> 重新打开），会消耗你账号每月的免费 Codespaces 时长，用完可在那里删除。
 
 ### 方式二 —— 从源码运行
 
@@ -101,26 +95,12 @@ python box_generator/main.py box_generator/config.yaml   # 生成 box_output.stl
 
 完整步骤见 [安装教程](docs/installation.zh-CN.md)。
 
-### 方式三 —— Docker（公网部署）
-
-在服务器上把网页界面部署给别人用：
-
-```bash
-docker run -d -p 8501:8501 ghcr.io/owenwoow/boxforge:latest
-# 或带上仓库自带的资源上限：  docker compose pull && docker compose up -d
-# -> 网页界面在 http://<服务器IP>:8501
-```
-
-镜像由 GitHub Actions 在每次发版时自动构建、测试并发布到 GHCR，服务器上不需要再构建。镜像已做公网加固（非 root、资源上限、缓存有界、输入滥用防护）。请在 `8501` 端口前挂一个终结 HTTPS 的反向代理。完整指南见 [部署教程](docs/deployment.zh-CN.md)。
-
 ## 文档
 
 | 指南 | English | 简体中文 |
 |---|---|---|
 | 安装与从源码运行 | [installation.md](docs/installation.md) | [installation.zh-CN.md](docs/installation.zh-CN.md) |
-| 桌面版（预编译） | [desktop-app.md](docs/desktop-app.md) | [desktop-app.zh-CN.md](docs/desktop-app.zh-CN.md) |
 | 参数与使用手册 | [usage.md](docs/usage.md) | [usage.zh-CN.md](docs/usage.zh-CN.md) |
-| 公网部署（Docker） | [deployment.md](docs/deployment.md) | [deployment.zh-CN.md](docs/deployment.zh-CN.md) |
 
 ## 项目结构
 
@@ -130,7 +110,6 @@ BoxForge/
 │   ├── config.yaml            # 命令行用的样例配置
 │   ├── main.py                # 命令行入口
 │   ├── app.py                 # Streamlit 网页界面入口
-│   ├── desktop_app.py         # 桌面版启动器（由 PyInstaller 打包）
 │   ├── .streamlit/            # Streamlit 配置（公网部署加固）
 │   └── box_builder/
 │       ├── validate.py         # YAML 校验 + 安全钳制
@@ -139,10 +118,9 @@ BoxForge/
 │       ├── hollow.py           # 45° 药丸镂空阵列
 │       └── export.py           # STL 导出
 ├── tests/                     # pytest 测试（校验、建模、网页界面）
-├── packaging/                 # PyInstaller 打包脚本 + 冒烟测试
 ├── docs/                      # 教程（English + 简体中文）
-├── Dockerfile · docker-compose.yml
-└── .github/workflows/         # CI/CD：测试、Docker 镜像、桌面版发布
+├── .devcontainer/             # GitHub Codespaces 配置（自动启动网页界面）
+└── .github/workflows/         # CI（lint + 测试）与打标签发版
 ```
 
 ## 参与贡献
