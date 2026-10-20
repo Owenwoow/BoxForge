@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- UI screenshots and a self-hosting guide (own GitHub Pages fork, or the
+  release zip on any static host) in the README.
+
+### Changed
+
+- `@types/node` 24 → 26.
+- Dependabot ignores TypeScript major upgrades (stay on 5.x until 7.x settles).
+
 ## [0.2.0] - 2026-10-20
 
 Rebuilt as a static web app that runs entirely in the browser and is built,

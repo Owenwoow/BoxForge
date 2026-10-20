@@ -6,7 +6,9 @@ Thanks for your interest in improving BoxForge! This guide covers the dev setup,
 
 - **`main`** — what's live. Every merge into `main` is deployed to GitHub Pages automatically, so it must always be shippable. Protected: a PR can only merge once CI passes. / 线上版本；每次合入都会自动部署，受保护，CI 通过才能合并。
 - **`dev`** — day-to-day development; also holds dev-only material (design notes, editor/AI tooling) that doesn't belong in the release tree. / 日常开发分支，同时存放开发期材料。
-- **`legacy`** — frozen snapshot of the previous Python/CadQuery/Streamlit version. Read-only. / 旧版 Python 实现的冻结快照，只读保留。
+- **`legacy`** / **`legacy-dev`** — frozen snapshots of the previous Python/CadQuery/Streamlit version (`main` and `dev` as they were before v0.2.0, including the old design docs). Read-only; never merge them back. / 旧版 Python 实现在 v0.2.0 之前的 `main` 与 `dev` 冻结快照（含旧设计文档），只读保留，不要合回。
+
+No other long-lived branches: feature and Dependabot branches are deleted once merged or closed. / 除上述分支外不保留长期分支，功能分支与 Dependabot 分支合并或关闭后即删除。
 
 Work on `dev` (or a feature branch off `dev`) and open PRs into `dev`; promote to `main` with a PR when ready. / 在 `dev` 上开发并向 `dev` 提 PR，成熟后再向 `main` 提 PR。
 
@@ -50,7 +52,8 @@ Everything runs on GitHub — nothing is built, deployed or hosted by hand. / �
 
 - Live site / 线上地址: <https://owenwoow.github.io/BoxForge/>
 - The `Test & build` check is required before merging into `main`. / 合入 `main` 前必须通过 `Test & build` 检查。
-- Dependabot opens weekly PRs into `dev` for npm packages and GitHub Actions. / Dependabot 每周向 `dev` 提依赖更新 PR。
+- Dependabot opens weekly PRs into `dev` for npm packages and GitHub Actions; minor/patch npm updates are grouped into one PR. TypeScript major upgrades are ignored on purpose (we stay on 5.x until TypeScript 7 settles) — do that upgrade deliberately in its own PR. / Dependabot 每周向 `dev` 提依赖更新 PR，npm 的小版本更新合并为一个 PR；TypeScript 大版本升级被有意忽略（7.x 稳定前停留在 5.x），届时单独提 PR 升级。
+- Merging a dependency PR into `dev` doesn't reach `main` by itself: promote it with the next `dev` → `main` PR. / 合入 `dev` 的依赖更新需随下一次 `dev` → `main` 的 PR 一起上线。
 
 ### Cutting a release / 发版步骤
 
