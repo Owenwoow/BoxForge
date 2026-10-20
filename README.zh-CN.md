@@ -2,12 +2,12 @@
 
 # 🗃️ BoxForge
 
-**参数化 3D 收纳盒生成器 —— 圆角、递归隔板、45° 免支撑药丸镂空，一键导出可打印 STL。**
+**参数化 3D 收纳盒生成器 —— 圆角、递归隔板、45° 免支撑药丸镂空，一键导出可打印 STL。打开网页就能用，全部在浏览器本地计算。**
 
-[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-2ea44f?logo=github)](https://codespaces.new/Owenwoow/BoxForge?quickstart=1)
-[![CI](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml)
+### 👉 [在线使用：owenwoow.github.io/BoxForge](https://owenwoow.github.io/BoxForge/)
+
+[![CI/CD](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
 <img src="docs/images/hero_render.png" alt="BoxForge 示例盒子" width="640">
 
@@ -21,10 +21,9 @@
 
 - [这是什么？](#这是什么)
 - [功能特性](#功能特性)
-- [界面截图](#界面截图)
-- [快速开始](#快速开始)
-  - [方式一 —— 在 GitHub Codespaces 在线使用](#方式一--在-github-codespaces-在线使用)
-  - [方式二 —— 从源码运行](#方式二--从源码运行)
+- [怎么用](#怎么用)
+- [架构](#架构)
+- [本地开发](#本地开发)
 - [文档](#文档)
 - [项目结构](#项目结构)
 - [参与贡献](#参与贡献)
@@ -34,99 +33,101 @@
 
 BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印的 STL**。填好尺寸、把四角磨圆、在任意位置加隔板、在底面和隔板上打免支撑透气孔，然后下载打印即可。
 
-它提供两种形态，共用同一套建模引擎：
-
-| 方式 | 适合场景 | 入口 |
-|---|---|---|
-| **网页界面**（Streamlit） | 手动调参 + 实时 3D 预览 | `streamlit run box_generator/app.py` |
-| **命令行** | 写脚本、批量生成、自动化 | `python box_generator/main.py config.yaml` |
-
-几何建模基于 [CadQuery](https://github.com/CadQuery/cadquery) —— 真正的 OpenCASCADE B-rep CAD 内核，**不是** mesh 网格库 —— 所以圆角、抽壳、布尔运算都稳健可靠。
+几何建模用的是 [OpenCASCADE](https://dev.opencascade.org/) —— 真正的 B-rep CAD 内核（**不是** mesh 网格库），编译成 WebAssembly 后直接在你的浏览器里运行，所以圆角、抽壳、布尔运算都稳健可靠，而且**没有服务器、不上传任何数据**。
 
 > 收纳盒设计为**顶面开口无盖**。长宽硬性上限 **250 mm**，适配 256×256 打印板。
 
 ## 功能特性
 
-- **自定义尺寸** —— 长 / 宽 / 高 / 壁厚全部参数化。
+- **自定义尺寸** —— 长 / 宽 / 高 / 壁厚全部参数化，滑块和数值框都能调。
 - **两类独立圆角** —— 竖直四角圆角（手机壳那种）*和* 顶/底水平棱圆角（不割手）。顶沿会**同时**倒内外两条棱。
-- **递归隔板（BSP 树）** —— 沿 X 或 Y 切分任意区域，切完的每个子区域还能独立继续细分。对半分、十字四格等预设一键生成。
-- **45° 免支撑药丸镂空** —— 底面和/或隔板上的交错胶囊孔，自动排布并保留一圈实心边框。45° 角能自架桥，无需支撑即可打印。外墙永不镂空。
-- **实时 3D 预览** —— 网页界面把模型放在模拟的 256×256 打印板上（仿 Bambu Studio），可在浏览器里旋转缩放。
-- **中英双语 + 明暗主题** —— 中文 / English、亮色 / 暗色都能随时切换。
-- **输入加固** —— 几何上限自动钳制、文件名净化、隔板树深度/数量有上限，可安全地部署到公网。
+- **递归隔板（BSP 树）** —— 沿长或宽切分任意区域，切完的每个子区域还能独立继续细分；对半分、十字四格等预设一键生成，俯视图实时显示。
+- **45° 免支撑药丸镂空** —— 底面和/或隔板上的交错胶囊孔，自动排布并保留一圈实心边框。外墙永不镂空。
+- **实时 3D 预览** —— 模型放在模拟的 256×256 打印板上（仿 Bambu Studio），可旋转缩放；建模在后台线程进行，拖滑块不卡页面。
+- **配置可导入导出、可分享** —— 当前设计可下载为 YAML，也可导入 YAML 还原；「复制分享链接」把整份设计编码进网址，对方打开就是同一个盒子。
+- **中英双语 + 明暗主题**，手机上也能用。
+- **输入加固** —— 几何上限自动钳制（并提示）、文件名净化、隔板树深度/数量有上限。
 
-## 界面截图
+## 怎么用
 
-> 📌 **在这里放你自己的界面截图。** 运行网页界面，对整窗截图，保存到下面的路径，然后取消对应行的注释即可。
+1. 打开 **<https://owenwoow.github.io/BoxForge/>**（首次需下载约 7 MB 的 CAD 内核，之后走浏览器缓存）。
+2. 在左侧调参数，右侧 3D 预览实时更新。
+3. 统计信息里「几何是否合法」显示 `OK` 后，点 **下载 STL**，拖进切片软件打印。
 
-<!-- ![网页界面总览](docs/images/ui_overview.png) -->
-`docs/images/ui_overview.png` *(待补 —— 建议约 1200px 宽)*
+每个参数的含义、取值范围和常见问题见 [使用手册](docs/usage.zh-CN.md)。
 
-## 快速开始
+## 架构
 
-### 方式一 —— 在 GitHub Codespaces 在线使用
+整个项目按「**在 GitHub 上构建、测试、托管**」来设计，不需要任何服务器：
 
-什么都不用装，在浏览器里用 GitHub 的云端机器运行：
-
-1. 打开 **<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>**（需登录 GitHub），点 **Create codespace**。
-2. 等首次初始化（安装 CadQuery，约 2 分钟），网页界面会自动启动并在预览标签页打开。
-3. 想在完整浏览器标签页打开或分享给别人：打开 **Ports（端口）** 面板，找到 `8501` 端口，打开它的转发地址（`https://<codespace名>-8501.app.github.dev`）。默认只有你自己能访问；右键 → **Port Visibility → Public** 后别人也能打开。
-
-> Codespace 是临时云端机器：闲置约 30 分钟会自动停止（可在 <https://github.com/codespaces> 重新打开），会消耗你账号每月的免费 Codespaces 时长，用完可在那里删除。
-
-### 方式二 —— 从源码运行
-
-```bash
-# 需要 Python 3.11–3.14
-git clone https://github.com/Owenwoow/BoxForge.git
-cd BoxForge
-
-python -m venv .venv
-# Windows PowerShell：  .venv\Scripts\Activate.ps1
-# macOS / Linux：       source .venv/bin/activate
-pip install -r requirements.txt
-
-# 网页界面  ->  http://localhost:8501
-streamlit run box_generator/app.py
-
-# …或走命令行
-python box_generator/main.py box_generator/config.yaml   # 生成 box_output.stl
+```mermaid
+flowchart LR
+  subgraph B["访客浏览器"]
+    UI["React 界面"] -- 参数 --> W["Web Worker<br/>OpenCASCADE (WebAssembly)"]
+    W -- 网格 / 统计 / STL --> UI
+    UI --> V["Three.js 3D 预览"]
+  end
+  subgraph G["GitHub"]
+    A["GitHub Actions：类型检查 → 单元测试 → 构建 → 端到端测试"] -- main 分支自动部署 --> P["GitHub Pages（纯静态文件）"]
+  end
+  P -- HTML / JS / WASM --> B
 ```
 
-完整步骤见 [安装教程](docs/installation.zh-CN.md)。
+- **纯静态站点**：建模在访客浏览器里完成，GitHub Pages 只负责分发 HTML/JS/WASM 文件。
+- **CI/CD 全在 GitHub Actions**：每个 PR 都要通过类型检查、单元测试、构建和真实浏览器端到端测试才能合入 `main`；合入后自动发布到 Pages。打 `vX.Y.Z` 标签会生成 Release，并附带打包好的站点 zip。
+- **建模核心与界面分离**：`src/core/` 是不依赖 DOM 的纯 TypeScript，在 Node 里就能测试；单元测试用旧版 Python/CadQuery 实现算出的体积做基准，保证移植后的几何结果一致。
+
+> 旧版（Python + CadQuery + Streamlit，含命令行与桌面版）完整保存在 [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) 分支。
+
+## 本地开发
+
+需要 Node.js 22 或更新版本。
+
+```bash
+git clone https://github.com/Owenwoow/BoxForge.git
+cd BoxForge
+npm install
+
+npm run dev         # 开发服务器（热更新）  -> http://localhost:5173
+npm test            # 单元测试：配置校验 + 真实 OpenCASCADE 建模
+npm run build       # 生产构建到 dist/
+npm run e2e         # 在 Chromium 里跑端到端测试（先 npx playwright install chromium）
+```
+
+分支模型、提交规范和发版步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 文档
 
 | 指南 | English | 简体中文 |
 |---|---|---|
-| 安装与从源码运行 | [installation.md](docs/installation.md) | [installation.zh-CN.md](docs/installation.zh-CN.md) |
 | 参数与使用手册 | [usage.md](docs/usage.md) | [usage.zh-CN.md](docs/usage.zh-CN.md) |
+| 开发、CI/CD 与发版 | [CONTRIBUTING.md](CONTRIBUTING.md) | 同左（双语） |
 
 ## 项目结构
 
 ```
 BoxForge/
-├── box_generator/
-│   ├── config.yaml            # 命令行用的样例配置
-│   ├── main.py                # 命令行入口
-│   ├── app.py                 # Streamlit 网页界面入口
-│   ├── .streamlit/            # Streamlit 配置（公网部署加固）
-│   └── box_builder/
-│       ├── validate.py         # YAML 校验 + 安全钳制
-│       ├── body.py             # 盒体：圆角 + 抽壳
-│       ├── partitions.py       # 递归 BSP 隔板
-│       ├── hollow.py           # 45° 药丸镂空阵列
-│       └── export.py           # STL 导出
-├── tests/                     # pytest 测试（校验、建模、网页界面）
-├── docs/                      # 教程（English + 简体中文）
-├── .devcontainer/             # GitHub Codespaces 配置（自动启动网页界面）
-└── .github/workflows/         # CI（lint + 测试）与打标签发版
+├── src/
+│   ├── core/                  # 纯 TypeScript，无 DOM，可在 Node 中测试
+│   │   ├── config.ts           # 配置结构、校验与安全钳制、预设
+│   │   └── geometry/
+│   │       ├── oc.ts           # OpenCASCADE (WASM) 初始化
+│   │       ├── body.ts         # 盒体：圆角 + 抽壳
+│   │       ├── partitions.ts   # 递归 BSP 隔板
+│   │       ├── hollow.ts       # 45° 药丸镂空阵列
+│   │       └── build.ts        # 组装、统计、预览网格、STL 导出
+│   ├── worker/                # 后台建模线程（Web Worker）
+│   └── ui/                    # React 界面、Three.js 预览、中英文案
+├── e2e/                       # Playwright 端到端测试
+├── docs/                      # 使用手册（English + 简体中文）
+├── index.html · vite.config.ts · playwright.config.ts
+└── .github/workflows/         # ci-cd.yml（测试 + 部署 Pages）· release.yml（发版）
 ```
 
 ## 参与贡献
 
-欢迎贡献！开发环境、分支模型（`dev` 用于开发，`main` 只放正式版本）、提交规范请见 [CONTRIBUTING.md](CONTRIBUTING.md)。Bug 和需求请提 [issue](https://github.com/Owenwoow/BoxForge/issues)。
+欢迎贡献！开发环境、分支模型（`dev` 用于开发，`main` 即线上版本）、提交规范请见 [CONTRIBUTING.md](CONTRIBUTING.md)。Bug 和需求请提 [issue](https://github.com/Owenwoow/BoxForge/issues)。
 
 ## 开源协议
 
-基于 [MIT 协议](LICENSE) 发布。
+基于 [MIT 协议](LICENSE) 发布。建模内核使用 [replicad](https://replicad.xyz/)（MIT）与 OpenCASCADE 的 WebAssembly 构建 `replicad-opencascadejs`（LGPL-2.1），后者以独立的 `.wasm` 文件随站点分发。

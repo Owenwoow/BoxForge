@@ -6,26 +6,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+Rebuilt as a static web app that runs entirely in the browser and is built,
+tested and hosted on GitHub. The previous Python version is preserved on the
+`legacy` branch.
+
 ### Added
 
-- **GitHub Codespaces**: one-click online run
-  (<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>); the dev container
-  installs everything and starts the web UI automatically.
-- **Test suite** (`pytest`): config validation and abuse guards, real CadQuery
-  modeling, CLI export, and a headless Streamlit run of the web UI.
-- Dependabot updates for GitHub Actions and the dev container.
+- **Online at <https://owenwoow.github.io/BoxForge/>**: GitHub Pages hosting,
+  deployed automatically by GitHub Actions on every merge into `main`.
+- **In-browser CAD kernel**: OpenCASCADE compiled to WebAssembly (via
+  replicad), running in a Web Worker so the page stays responsive.
+- **Config YAML import/export** (same schema as the old CLI `config.yaml`) and
+  **share links** that encode the whole design in the URL.
+- Auto-corrected parameters are listed on the page instead of only logged.
+- Test suite: config validation, real OpenCASCADE geometry pinned to volumes
+  from the original CadQuery implementation, and Playwright end-to-end tests of
+  the production build in Chromium.
+- `release.yml`: version tags publish a Release with the built site as a zip.
 
 ### Changed
 
-- CI runs lint (ruff) + tests on Python 3.11, 3.13 and 3.14, and must pass
-  before a PR can merge into `main`. Tag pushes publish a GitHub Release.
-- Supported Python is now **3.11–3.14** (current CadQuery dropped 3.10 and
-  added 3.14).
+- Rewritten in TypeScript (React + Vite + Three.js); the modeling pipeline,
+  validation rules, limits and presets are ported 1:1 from the Python version.
+- CI/CD (`ci-cd.yml`): typecheck → unit tests → build → E2E on every PR and
+  push; `main` additionally deploys to GitHub Pages.
 
 ### Removed
 
-- Desktop app (PyInstaller builds) — use Codespaces or run from source.
-- Docker image, `docker-compose.yml` and the self-hosted deployment guide.
+- Python implementation (CadQuery modeling core, Streamlit web UI, CLI),
+  Codespaces dev container and Python tooling — see the `legacy` branch.
 
 ## [0.1.0] - 2026-07-22
 
@@ -54,5 +65,6 @@ First public release.
 - Bilingual documentation (English + 简体中文) and open-source scaffolding
   (MIT license, contributing guide, issue/PR templates).
 
-[Unreleased]: https://github.com/Owenwoow/BoxForge/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Owenwoow/BoxForge/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Owenwoow/BoxForge/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Owenwoow/BoxForge/releases/tag/v0.1.0
