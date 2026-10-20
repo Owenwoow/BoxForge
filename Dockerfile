@@ -6,7 +6,7 @@
 # shared X11/OpenGL system libraries must be present at runtime even though we
 # never open a window (it links against them for its geometry stack).
 
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.15-slim-bookworm AS runtime
 
 # --- OS runtime libraries required by CadQuery / OCP (OpenCASCADE) ---
 RUN apt-get update \
