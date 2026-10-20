@@ -4,7 +4,7 @@ Thanks for your interest in improving BoxForge! This guide covers the dev setup,
 
 ## Branch model / 分支模型
 
-- **`main`** — release branch. Only finished, working code and user-facing docs. Every commit should be shippable. Release tags (`vX.Y.Z`) are cut from here and trigger the desktop-app builds.
+- **`main`** — release branch. Only finished, working code and user-facing docs. Every commit should be shippable. Release tags (`vX.Y.Z`) are cut from here.
 - **`dev`** — development branch. Where day-to-day work happens; also holds dev-only material (design/spec docs, AI/editor tooling) that doesn't belong in a clean release tree.
 
 Work on `dev` (or a feature branch off `dev`), then open a PR into `dev`. Changes are promoted to `main` when they're release-ready.
@@ -39,34 +39,31 @@ Run the same checks CI runs:
 ruff check .                                       # lint
 pytest                                             # validation, modeling, web UI tests
 pytest -m "not slow"                               # just the fast validation tests
-python box_generator/desktop_app.py --selftest     # desktop launcher self-test
 ```
 
 ## CI/CD / 持续集成与发布
 
-Everything is built, tested and published by GitHub Actions — nothing is built by hand. / 构建、测试、发布全部由 GitHub Actions 完成，不需要手动构建。
+Everything runs on GitHub — nothing is built or deployed by hand. / 一切都在 GitHub 上完成，不需要手动构建或部署。
 
-| Trigger / 触发 | What runs / 执行内容 | Output / 产物 |
-|---|---|---|
-| PR into `dev` / `main` | lint + tests (Python 3.11 / 3.13 / 3.14) + Docker build & smoke test | — |
-| push to `dev` | same, then publish image | `ghcr.io/owenwoow/boxforge:dev` |
-| push to `main` | same, then publish image | `ghcr.io/owenwoow/boxforge:edge` |
-| push tag `vX.Y.Z` | same + desktop builds (Windows / Linux / macOS) | image `:X.Y.Z` `:X.Y` `:latest` + GitHub Release |
+| Trigger / 触发 | What runs / 执行内容 |
+|---|---|
+| PR into `dev` / `main`, push to `dev` / `main` | [`ci.yml`](.github/workflows/ci.yml): ruff + pytest on Python 3.11 / 3.13 / 3.14 — must pass before a PR can merge into `main` / 合入 `main` 前必须通过 |
+| push tag `vX.Y.Z` | [`release.yml`](.github/workflows/release.yml): GitHub Release with generated notes / 自动生成说明并发布 Release |
 
-Workflows: [`ci.yml`](.github/workflows/ci.yml) (tests + Docker image) and [`build-desktop.yml`](.github/workflows/build-desktop.yml) (desktop apps + Release). Dependabot opens weekly PRs into `dev` for Action and base-image updates.
+The web UI runs in [GitHub Codespaces](https://codespaces.new/Owenwoow/BoxForge?quickstart=1), configured by [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json). Dependabot opens weekly PRs into `dev` for Action and dev-container updates. / 网页界面在 GitHub Codespaces 中运行；Dependabot 每周向 `dev` 提更新 PR。
 
 ### Cutting a release / 发版步骤
 
 1. Merge `dev` into `main` and wait for CI to go green. / 把 `dev` 合入 `main`，等 CI 通过。
 2. Move the `[Unreleased]` notes in `CHANGELOG.md` under a new version heading. / 在 `CHANGELOG.md` 里把 `[Unreleased]` 的内容移到新版本号下。
-3. Tag and push — Actions does the rest. / 打标签并推送，其余交给 Actions：
+3. Tag and push — Actions publishes the Release. / 打标签并推送，Actions 自动发布 Release：
 
 ```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-A tag with a suffix such as `v0.2.0-rc.1` is published as a pre-release and does not move `:latest`. / 带后缀的标签（如 `v0.2.0-rc.1`）发布为预发布版，不会更新 `:latest`。
+A tag with a suffix such as `v0.2.0-rc.1` is published as a pre-release. / 带后缀的标签（如 `v0.2.0-rc.1`）发布为预发布版。
 
 ## Commit convention / 提交规范
 
@@ -79,14 +76,6 @@ Use a type prefix and a concise description:
 - `chore:` build/tooling/CI
 
 Keep one logical change per commit; don't bundle unrelated changes. / 每次提交只做一件事，不要把不相关的改动堆在一起。
-
-## Building the desktop app locally / 本地打包桌面版
-
-```bash
-pip install pyinstaller
-pyinstaller packaging/boxforge.spec --noconfirm
-python packaging/smoke_test.py dist/BoxForge/BoxForge   # (BoxForge.exe on Windows)
-```
 
 ## Reporting issues / 反馈问题
 

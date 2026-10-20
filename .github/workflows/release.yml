@@ -1,0 +1,19 @@
+name: Release
+
+# Push a tag like `v0.2.0` -> GitHub Release with auto-generated notes.
+# Tags with a suffix (`v0.2.0-rc.1`) are published as pre-releases.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

@@ -13,10 +13,9 @@ __pycache__/
 box_generator/*.stl
 *.stl
 
-# PyInstaller / packaging build output
+# Build output
 build/
 dist/
-*.spec.bak
 
 # OS / editor cruft
 .DS_Store
