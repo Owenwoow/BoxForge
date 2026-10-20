@@ -4,9 +4,8 @@
 
 **Parametric 3D storage-box generator — rounded corners, recursive dividers, support-free 45° pill vents, straight to a printable STL.**
 
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-2ea44f?logo=github)](https://codespaces.new/Owenwoow/BoxForge?quickstart=1)
 [![CI](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml)
-[![Build desktop apps](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml)
-[![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?include_prereleases&sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
@@ -24,9 +23,8 @@
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Get started](#get-started)
-  - [Option 1 — Desktop app (no Python)](#option-1--desktop-app-no-python)
+  - [Option 1 — Online in GitHub Codespaces](#option-1--online-in-github-codespaces)
   - [Option 2 — Run from source](#option-2--run-from-source)
-  - [Option 3 — Docker (public deploy)](#option-3--docker-public-deploy)
 - [Documentation](#documentation)
 - [Project structure](#project-structure)
 - [Contributing](#contributing)
@@ -66,19 +64,15 @@ The geometry is built with [CadQuery](https://github.com/CadQuery/cadquery) — 
 
 ## Get started
 
-### Option 1 — Desktop app (no Python)
+### Option 1 — Online in GitHub Codespaces
 
-The easiest way for non-developers. Download the prebuilt app for your OS from the [**latest release**](https://github.com/Owenwoow/BoxForge/releases/latest), unzip, and run `BoxForge` — it starts a local server and opens the web UI in your browser automatically. No Python, no `pip`.
+Nothing to install — runs in GitHub's cloud from your browser:
 
-| Platform | Download |
-|---|---|
-| Windows x64 | `BoxForge-windows-x64.zip` |
-| Linux amd64 | `BoxForge-linux-amd64.tar.gz` |
-| macOS (Apple Silicon) | `BoxForge-macos-arm64.tar.gz` |
+1. Open **<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>** (sign in to GitHub) and click **Create codespace**.
+2. Wait for the first-time setup (installs CadQuery, ~2 minutes). The web UI then starts on its own and opens in a preview tab.
+3. To open it in a full browser tab or share it, go to the **Ports** panel, find port `8501`, and open its forwarded address (`https://<codespace-name>-8501.app.github.dev`). It's private to you by default; right-click → **Port Visibility → Public** to let others open it.
 
-> Intel Macs: run [from source](#option-2--run-from-source) or via [Docker](#option-3--docker-public-deploy).
-
-See the [Desktop app guide](docs/desktop-app.md) for run instructions and OS security prompts.
+> A Codespace is a temporary cloud machine: it stops after ~30 minutes idle (reopen it from <https://github.com/codespaces>) and uses your account's free monthly Codespaces hours. Delete it there when you're done.
 
 ### Option 2 — Run from source
 
@@ -101,26 +95,12 @@ python box_generator/main.py box_generator/config.yaml   # writes box_output.stl
 
 Full walkthrough: [Installation guide](docs/installation.md).
 
-### Option 3 — Docker (public deploy)
-
-To host the web UI for others on a server:
-
-```bash
-docker run -d -p 8501:8501 ghcr.io/owenwoow/boxforge:latest
-# or, with the bundled resource limits:  docker compose pull && docker compose up -d
-# -> web UI on http://<server-ip>:8501
-```
-
-The image is built, tested, and published to GHCR by GitHub Actions on every release — nothing to build on the server. It is hardened for public exposure (non-root, resource ceilings, bounded caches, input abuse guards). Put a TLS-terminating reverse proxy in front of port `8501`. Full guide: [Deployment guide](docs/deployment.md).
-
 ## Documentation
 
 | Guide | English | 简体中文 |
 |---|---|---|
 | Install & run from source | [installation.md](docs/installation.md) | [installation.zh-CN.md](docs/installation.zh-CN.md) |
-| Desktop app (prebuilt) | [desktop-app.md](docs/desktop-app.md) | [desktop-app.zh-CN.md](docs/desktop-app.zh-CN.md) |
 | Parameters & usage reference | [usage.md](docs/usage.md) | [usage.zh-CN.md](docs/usage.zh-CN.md) |
-| Public deployment (Docker) | [deployment.md](docs/deployment.md) | [deployment.zh-CN.md](docs/deployment.zh-CN.md) |
 
 ## Project structure
 
@@ -130,7 +110,6 @@ BoxForge/
 │   ├── config.yaml            # sample config for the CLI
 │   ├── main.py                # CLI entry point
 │   ├── app.py                 # Streamlit web UI entry point
-│   ├── desktop_app.py         # desktop launcher (packaged by PyInstaller)
 │   ├── .streamlit/            # Streamlit config (public-deploy hardening)
 │   └── box_builder/
 │       ├── validate.py         # YAML validation + safe clamping
@@ -139,10 +118,9 @@ BoxForge/
 │       ├── hollow.py           # 45° pill-vent arrays
 │       └── export.py           # STL export
 ├── tests/                     # pytest suite (validation, modeling, web UI)
-├── packaging/                 # PyInstaller spec + smoke test
 ├── docs/                      # guides (EN + 简体中文)
-├── Dockerfile · docker-compose.yml
-└── .github/workflows/         # CI/CD: tests, Docker image, desktop releases
+├── .devcontainer/             # GitHub Codespaces setup (auto-starts the web UI)
+└── .github/workflows/         # CI (lint + tests) and tag releases
 ```
 
 ## Contributing

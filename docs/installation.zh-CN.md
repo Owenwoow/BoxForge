@@ -4,7 +4,7 @@
 
 本教程带你从一台干净的电脑一路走到可打印的 STL，重点讲如何创建 Python 虚拟环境。不需要任何 Python 工具链基础。
 
-> 不想折腾环境？直接用 [桌面版](desktop-app.zh-CN.md)，无需 Python。
+> 不想折腾环境？直接在 [GitHub Codespaces](https://codespaces.new/Owenwoow/BoxForge?quickstart=1) 里在线运行，见 [README](../README.zh-CN.md#方式一--在-github-codespaces-在线使用)。
 
 ## 1. 环境要求
 
