@@ -1,9 +1,13 @@
-# One-command public deployment:
+# One-command public deployment, using the image CI publishes to GHCR:
 #
-#     docker compose up -d --build
+#     docker compose pull && docker compose up -d
+#
+# Pin a release with BOXFORGE_TAG (default `latest` = newest release; `edge` =
+# current main), e.g. `BOXFORGE_TAG=0.2.0 docker compose up -d`.
+# `docker compose up -d --build` still builds locally from this checkout.
 #
 # Then reverse-proxy port 8501 behind Nginx/Caddy/Traefik with TLS (see
-# docs/DEPLOYMENT_AND_USAGE.md). The resource limits below are the real
+# docs/deployment.md). The resource limits below are the real
 # safety net on a shared VPS: CadQuery model builds are CPU/RAM heavy, so a
 # hard ceiling keeps one abusive request from taking the whole box down.
 
@@ -12,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: boxforge:latest
+    image: ghcr.io/owenwoow/boxforge:${BOXFORGE_TAG:-latest}
     container_name: boxforge
     restart: unless-stopped
     ports:
