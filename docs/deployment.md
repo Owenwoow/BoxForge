@@ -6,17 +6,35 @@ Running the web UI for **one person** is just `streamlit run`. To host it on a V
 
 ## 1. One command
 
+GitHub Actions builds, tests, and publishes the image to GitHub Container Registry, so the server only has to pull it — no compiling there.
+
 ```bash
-# On the server, from the repo root:
-docker compose up -d --build
+# Simplest: just run the published image
+docker run -d --name boxforge -p 8501:8501 --restart unless-stopped ghcr.io/owenwoow/boxforge:latest
+
+# Recommended: use the repo's docker-compose.yml (adds the resource limits in section 4).
+# Only that one file is needed on the server.
+docker compose pull && docker compose up -d
 
 # Web UI is now on   http://<server-ip>:8501
 # Logs:              docker compose logs -f
-# Update after a git pull:  docker compose up -d --build
+# Update:            docker compose pull && docker compose up -d
 # Stop:              docker compose down
 ```
 
-The first build downloads the CadQuery/OCP wheels and can take several minutes; subsequent builds are cached.
+### Image tags
+
+| Tag | What it is |
+|---|---|
+| `latest` | newest release (the most recent `vX.Y.Z` tag) |
+| `X.Y.Z` / `X.Y` | a specific release — pin this in production |
+| `edge` | current `main` branch |
+| `dev` | current `dev` branch (unstable) |
+| `sha-<commit>` | one exact commit |
+
+Pick a tag for compose with `BOXFORGE_TAG`, e.g. `BOXFORGE_TAG=0.2.0 docker compose up -d`.
+
+> Prefer building yourself? `docker compose up -d --build` builds from the checkout instead (first build takes several minutes to download CadQuery/OCP).
 
 ## 2. Put TLS + a domain in front (recommended)
 

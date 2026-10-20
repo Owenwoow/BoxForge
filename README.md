@@ -8,7 +8,7 @@
 [![Build desktop apps](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml)
 [![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?include_prereleases&sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10–3.13](https://img.shields.io/badge/python-3.10--3.13-blue.svg)](https://www.python.org/)
+[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
 <img src="docs/images/hero_render.png" alt="BoxForge sample box" width="640">
 
@@ -83,7 +83,7 @@ See the [Desktop app guide](docs/desktop-app.md) for run instructions and OS sec
 ### Option 2 — Run from source
 
 ```bash
-# Python 3.10–3.13 required (not 3.14 — CadQuery has no wheel for it yet)
+# Python 3.11–3.14 required
 git clone https://github.com/Owenwoow/BoxForge.git
 cd BoxForge
 
@@ -106,11 +106,12 @@ Full walkthrough: [Installation guide](docs/installation.md).
 To host the web UI for others on a server:
 
 ```bash
-docker compose up -d --build
+docker run -d -p 8501:8501 ghcr.io/owenwoow/boxforge:latest
+# or, with the bundled resource limits:  docker compose pull && docker compose up -d
 # -> web UI on http://<server-ip>:8501
 ```
 
-The image is hardened for public exposure (non-root, resource ceilings, bounded caches, input abuse guards). Put a TLS-terminating reverse proxy in front of port `8501`. Full guide: [Deployment guide](docs/deployment.md).
+The image is built, tested, and published to GHCR by GitHub Actions on every release — nothing to build on the server. It is hardened for public exposure (non-root, resource ceilings, bounded caches, input abuse guards). Put a TLS-terminating reverse proxy in front of port `8501`. Full guide: [Deployment guide](docs/deployment.md).
 
 ## Documentation
 
@@ -137,10 +138,11 @@ BoxForge/
 │       ├── partitions.py       # recursive BSP dividers
 │       ├── hollow.py           # 45° pill-vent arrays
 │       └── export.py           # STL export
+├── tests/                     # pytest suite (validation, modeling, web UI)
 ├── packaging/                 # PyInstaller spec + smoke test
 ├── docs/                      # guides (EN + 简体中文)
 ├── Dockerfile · docker-compose.yml
-└── .github/workflows/         # CI + desktop-app release builds
+└── .github/workflows/         # CI/CD: tests, Docker image, desktop releases
 ```
 
 ## Contributing

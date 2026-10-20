@@ -18,10 +18,10 @@ git clone https://github.com/Owenwoow/BoxForge.git
 cd BoxForge
 git checkout dev
 
-python -m venv .venv          # Python 3.10–3.13 (not 3.14)
+python -m venv .venv          # Python 3.11–3.14
 # Windows PowerShell:  .venv\Scripts\Activate.ps1
 # macOS / Linux:       source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # runtime deps + pytest + ruff
 ```
 
 Run the app while developing:
@@ -36,9 +36,37 @@ python box_generator/main.py box_generator/config.yaml   # CLI
 Run the same checks CI runs:
 
 ```bash
-python -m compileall box_generator                 # syntax
-python box_generator/desktop_app.py --selftest     # full CadQuery build
+ruff check .                                       # lint
+pytest                                             # validation, modeling, web UI tests
+pytest -m "not slow"                               # just the fast validation tests
+python box_generator/desktop_app.py --selftest     # desktop launcher self-test
 ```
+
+## CI/CD / 持续集成与发布
+
+Everything is built, tested and published by GitHub Actions — nothing is built by hand. / 构建、测试、发布全部由 GitHub Actions 完成，不需要手动构建。
+
+| Trigger / 触发 | What runs / 执行内容 | Output / 产物 |
+|---|---|---|
+| PR into `dev` / `main` | lint + tests (Python 3.11 / 3.13 / 3.14) + Docker build & smoke test | — |
+| push to `dev` | same, then publish image | `ghcr.io/owenwoow/boxforge:dev` |
+| push to `main` | same, then publish image | `ghcr.io/owenwoow/boxforge:edge` |
+| push tag `vX.Y.Z` | same + desktop builds (Windows / Linux / macOS) | image `:X.Y.Z` `:X.Y` `:latest` + GitHub Release |
+
+Workflows: [`ci.yml`](.github/workflows/ci.yml) (tests + Docker image) and [`build-desktop.yml`](.github/workflows/build-desktop.yml) (desktop apps + Release). Dependabot opens weekly PRs into `dev` for Action and base-image updates.
+
+### Cutting a release / 发版步骤
+
+1. Merge `dev` into `main` and wait for CI to go green. / 把 `dev` 合入 `main`，等 CI 通过。
+2. Move the `[Unreleased]` notes in `CHANGELOG.md` under a new version heading. / 在 `CHANGELOG.md` 里把 `[Unreleased]` 的内容移到新版本号下。
+3. Tag and push — Actions does the rest. / 打标签并推送，其余交给 Actions：
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+A tag with a suffix such as `v0.2.0-rc.1` is published as a pre-release and does not move `:latest`. / 带后缀的标签（如 `v0.2.0-rc.1`）发布为预发布版，不会更新 `:latest`。
 
 ## Commit convention / 提交规范
 
