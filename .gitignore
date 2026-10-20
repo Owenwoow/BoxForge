@@ -1,22 +1,19 @@
-# Virtual environments
-.venv/
-venv/
-env/
+# Dependencies
+node_modules/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-
-# Generated models
-box_generator/*.stl
-*.stl
-
-# Build output
-build/
+# Build output (published by GitHub Actions, never committed)
 dist/
 
-# OS / editor cruft
+# Test artifacts
+test-results/
+playwright-report/
+*.stl
+
+# Editors / OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+
+# Local editor / AI tooling (lives on the dev branch only)
+.claude/
