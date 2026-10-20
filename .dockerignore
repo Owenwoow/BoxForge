@@ -14,3 +14,8 @@ docs/
 Dockerfile
 .dockerignore
 docker-compose.yml
+tests/
+pyproject.toml
+requirements-dev.txt
+packaging/
+.github/
