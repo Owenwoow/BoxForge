@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Test suite** (`pytest`): config validation and abuse guards, real CadQuery
+  modeling, CLI export, and a headless Streamlit run of the web UI.
+- **Docker image on GHCR**: CI builds, smoke-tests and publishes
+  `ghcr.io/owenwoow/boxforge` (`:dev`, `:edge`, `:X.Y.Z`, `:latest`), so
+  servers just pull instead of building.
+- Dependabot updates for GitHub Actions and the Docker base image.
+
+### Changed
+
+- CI now runs lint (ruff) + tests on Python 3.11, 3.13 and 3.14, then builds
+  and tests the Docker image before publishing it.
+- `docker-compose.yml` pulls the published image (pick a version with
+  `BOXFORGE_TAG`); `--build` still builds locally.
+- Supported Python is now **3.11–3.14** (current CadQuery dropped 3.10 and
+  added 3.14).
+
 ## [0.1.0] - 2026-07-22
 
 First public release.

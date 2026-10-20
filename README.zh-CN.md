@@ -8,7 +8,7 @@
 [![Build desktop apps](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/build-desktop.yml)
 [![Latest release](https://img.shields.io/github/v/release/Owenwoow/BoxForge?include_prereleases&sort=semver)](https://github.com/Owenwoow/BoxForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10–3.13](https://img.shields.io/badge/python-3.10--3.13-blue.svg)](https://www.python.org/)
+[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
 <img src="docs/images/hero_render.png" alt="BoxForge 示例盒子" width="640">
 
@@ -83,7 +83,7 @@ BoxForge 把几个参数变成一个定制收纳盒，并导出**可 3D 打印�
 ### 方式二 —— 从源码运行
 
 ```bash
-# 需要 Python 3.10–3.13（不要用 3.14，CadQuery 还没有对应轮子）
+# 需要 Python 3.11–3.14
 git clone https://github.com/Owenwoow/BoxForge.git
 cd BoxForge
 
@@ -106,11 +106,12 @@ python box_generator/main.py box_generator/config.yaml   # 生成 box_output.stl
 在服务器上把网页界面部署给别人用：
 
 ```bash
-docker compose up -d --build
+docker run -d -p 8501:8501 ghcr.io/owenwoow/boxforge:latest
+# 或带上仓库自带的资源上限：  docker compose pull && docker compose up -d
 # -> 网页界面在 http://<服务器IP>:8501
 ```
 
-镜像已做公网加固（非 root、资源上限、缓存有界、输入滥用防护）。请在 `8501` 端口前挂一个终结 HTTPS 的反向代理。完整指南见 [部署教程](docs/deployment.zh-CN.md)。
+镜像由 GitHub Actions 在每次发版时自动构建、测试并发布到 GHCR，服务器上不需要再构建。镜像已做公网加固（非 root、资源上限、缓存有界、输入滥用防护）。请在 `8501` 端口前挂一个终结 HTTPS 的反向代理。完整指南见 [部署教程](docs/deployment.zh-CN.md)。
 
 ## 文档
 
@@ -137,10 +138,11 @@ BoxForge/
 │       ├── partitions.py       # 递归 BSP 隔板
 │       ├── hollow.py           # 45° 药丸镂空阵列
 │       └── export.py           # STL 导出
+├── tests/                     # pytest 测试（校验、建模、网页界面）
 ├── packaging/                 # PyInstaller 打包脚本 + 冒烟测试
 ├── docs/                      # 教程（English + 简体中文）
 ├── Dockerfile · docker-compose.yml
-└── .github/workflows/         # CI + 桌面版发布构建
+└── .github/workflows/         # CI/CD：测试、Docker 镜像、桌面版发布
 ```
 
 ## 参与贡献
