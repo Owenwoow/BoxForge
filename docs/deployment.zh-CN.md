@@ -6,17 +6,34 @@
 
 ## 1. 一条命令启动
 
+镜像由 GitHub Actions 自动构建、测试并发布到 GitHub 容器仓库（GHCR），服务器上只需要拉取，不用再编译。
+
 ```bash
-# 在服务器上，仓库根目录执行：
-docker compose up -d --build
+# 最简单：直接运行已发布的镜像
+docker run -d --name boxforge -p 8501:8501 --restart unless-stopped ghcr.io/owenwoow/boxforge:latest
+
+# 推荐：用仓库里的 docker-compose.yml（带第 4 节的资源上限），服务器上只需要这一个文件
+docker compose pull && docker compose up -d
 
 # 网页界面现在跑在   http://<服务器IP>:8501
 # 查看日志：         docker compose logs -f
-# git pull 后更新：  docker compose up -d --build
+# 更新：             docker compose pull && docker compose up -d
 # 停止：             docker compose down
 ```
 
-首次构建会下载 CadQuery/OCP 轮子，可能要几分钟；之后有缓存会很快。
+### 镜像标签
+
+| 标签 | 含义 |
+|---|---|
+| `latest` | 最新正式版（最近一个 `vX.Y.Z` 标签） |
+| `X.Y.Z` / `X.Y` | 指定版本——生产环境建议固定到这里 |
+| `edge` | `main` 分支最新代码 |
+| `dev` | `dev` 分支最新代码（不稳定） |
+| `sha-<提交>` | 某一个具体提交 |
+
+用 compose 时通过 `BOXFORGE_TAG` 选标签，例如 `BOXFORGE_TAG=0.2.0 docker compose up -d`。
+
+> 想自己构建？`docker compose up -d --build` 会改为从当前代码本地构建（首次要下载 CadQuery/OCP，需要几分钟）。
 
 ## 2. 前面挂 TLS + 域名（推荐）
 

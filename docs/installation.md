@@ -10,7 +10,7 @@ This guide takes you from a clean machine to a printable STL, with an emphasis o
 
 | Tool | Version / note |
 |---|---|
-| **Python** | **3.10 – 3.13**. ⚠️ Not 3.14 — CadQuery has no prebuilt wheel for it yet and the install will fail. |
+| **Python** | **3.11 – 3.14** (all tested in CI). Older Pythons can't install current CadQuery. |
 | **git** | any recent version |
 | OS | Windows / macOS / Linux all work |
 
@@ -33,7 +33,7 @@ cd BoxForge
 A **virtual environment** (venv) is an isolated, project-local Python. It keeps CadQuery's large binary dependencies out of your system Python. Create it once:
 
 ```bash
-# Force a specific interpreter if your default isn't 3.10–3.13:
+# Force a specific interpreter if your default isn't 3.11–3.14:
 py -3.13 -m venv .venv     # Windows example
 python3 -m venv .venv      # macOS / Linux
 ```
@@ -64,7 +64,7 @@ pip install -r requirements.txt
 
 This installs **cadquery** (the CAD kernel — pulls in OpenCASCADE + VTK binaries, so it's a **large, several-hundred-MB** download; be patient), **pyyaml**, and **streamlit**.
 
-> **`pip install cadquery` fails or hangs?** Confirm Python is 3.10–3.13. Fallback via conda: `conda install -c conda-forge -c cadquery cadquery`.
+> **`pip install cadquery` fails or hangs?** Confirm Python is 3.11–3.14. Fallback via conda: `conda install -c conda-forge -c cadquery cadquery`.
 
 ## 6. Verify
 
@@ -113,7 +113,7 @@ You don't recreate the venv or reinstall — just activate and run.
 | Symptom | Fix |
 |---|---|
 | `'streamlit' is not recognized` | The venv isn't activated. Activate it, or use the full path `.venv\Scripts\streamlit.exe`. |
-| `pip install cadquery` won't install | Ensure Python 3.10–3.13; else use the conda fallback (step 5). |
+| `pip install cadquery` won't install | Ensure Python 3.11–3.14; else use the conda fallback (step 5). |
 | PowerShell blocks `Activate.ps1` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then activate again. |
 | CLI: `box length/width must be <= 250.0mm` | The design is bigger than the print bed allows — a hard reject, not auto-shrunk. Reduce `size`. |
 | Web preview area is blank | The 3D viewer loads Three.js from a CDN; if that's unreachable the model still generates (stats show below) — just download the STL and preview in your slicer. |

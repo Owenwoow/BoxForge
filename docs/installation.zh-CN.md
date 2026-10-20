@@ -10,7 +10,7 @@
 
 | 工具 | 版本 / 说明 |
 |---|---|
-| **Python** | **3.10 – 3.13**。⚠️ 不要用 3.14 —— CadQuery 还没有对应的预编译包，会装不上。 |
+| **Python** | **3.11 – 3.14**（CI 中全部测试过）。更老的 Python 装不上当前版本的 CadQuery。 |
 | **git** | 任意较新版本 |
 | 操作系统 | Windows / macOS / Linux 都可以 |
 
@@ -33,7 +33,7 @@ cd BoxForge
 **虚拟环境**（venv）是一个隔离的、项目本地的 Python，能把 CadQuery 庞大的二进制依赖跟系统 Python 隔离开。只建一次：
 
 ```bash
-# 如果默认解释器不是 3.10–3.13，就指定一个：
+# 如果默认解释器不是 3.11–3.14，就指定一个：
 py -3.13 -m venv .venv     # Windows 示例
 python3 -m venv .venv      # macOS / Linux
 ```
@@ -64,7 +64,7 @@ pip install -r requirements.txt
 
 会安装 **cadquery**（CAD 内核，连带装 OpenCASCADE + VTK 二进制，体积**很大、几百 MB**，耐心等）、**pyyaml**、**streamlit**。
 
-> **`pip install cadquery` 失败或卡住？** 先确认 Python 是 3.10–3.13。退路用 conda：`conda install -c conda-forge -c cadquery cadquery`。
+> **`pip install cadquery` 失败或卡住？** 先确认 Python 是 3.11–3.14。退路用 conda：`conda install -c conda-forge -c cadquery cadquery`。
 
 ## 6. 验证安装
 
@@ -113,7 +113,7 @@ streamlit run box_generator/app.py
 | 现象 | 解决 |
 |---|---|
 | `'streamlit' 不是内部或外部命令` | venv 没激活。先激活，或用完整路径 `.venv\Scripts\streamlit.exe`。 |
-| `pip install cadquery` 装不上 | 确认 Python 是 3.10–3.13；否则用 conda 退路（第 5 步）。 |
+| `pip install cadquery` 装不上 | 确认 Python 是 3.11–3.14；否则用 conda 退路（第 5 步）。 |
 | PowerShell 拦截 `Activate.ps1` | 执行 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`，再激活。 |
 | 命令行报 `box length/width must be <= 250.0mm` | 尺寸超过打印板限制，硬性拒绝、不会自动缩小。改小 `size`。 |
 | 网页预览区空白 | 3D 预览从 CDN 加载 Three.js；无法访问时模型仍会生成（下方有统计信息）——直接下载 STL 用切片软件预览即可。 |
