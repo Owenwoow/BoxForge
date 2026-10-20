@@ -42,7 +42,9 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Pinned: the apt package names below are distro-specific, and
+    # ubuntu-latest is moving to 26.04. Bump deliberately, not by surprise.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
