@@ -9,7 +9,7 @@
 - **网页 UI**：`streamlit run app.py` → 浏览器内拖滑块 + 实时 3D 预览 + 下载 STL
 
 ## 技术栈
-- **Python 3.10~3.13**（本项目在 3.13 验证通过；3.14 装不上 CadQuery 的 OCP 轮子）
+- **Python 3.11~3.14**（CI 在 3.11/3.13/3.14 上测试；Docker 镜像与桌面版用 3.13；CadQuery 2.8 起不再支持 3.10）
 - **CadQuery**（基于 OpenCASCADE 真实 B-rep CAD 内核，非 mesh 库）—— 圆角/抽壳/布尔运算/STL 导出
 - **PyYAML** —— 读嵌套 YAML 配置
 - **Streamlit** —— 网页 UI；3D 预览用 CDN 加载的 Three.js（`STLLoader` + `OrbitControls`），无额外 Python 依赖
