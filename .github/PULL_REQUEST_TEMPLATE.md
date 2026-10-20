@@ -10,8 +10,8 @@
 - [ ] chore (build / CI / tooling)
 
 ## Checklist / 自检
-- [ ] `python -m compileall box_generator` passes
-- [ ] `ruff check .` and `pytest` pass
+- [ ] `npm run typecheck`, `npm test` and `npm run build` pass
+- [ ] `npm run e2e` passes (or CI's `Test & build` is green)
 - [ ] Docs updated if behavior/parameters changed / 若行为或参数有变，已更新文档
 - [ ] One logical change; commit messages follow the convention / 单一改动，提交信息符合规范
 

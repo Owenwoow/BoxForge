@@ -1,8 +1,16 @@
-# Weekly update PRs into `dev`; CI runs the full test + image pipeline on each.
-# Python deps are unpinned (requirements.txt), so CI always tests the latest.
-# Covers the Actions used by the workflows and the Codespaces dev container.
+# Weekly update PRs into `dev`; CI/CD runs the full test pipeline on each.
 version: 2
 updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
   - package-ecosystem: github-actions
     directory: /
     target-branch: dev
@@ -11,9 +19,3 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-
-  - package-ecosystem: devcontainers
-    directory: /
-    target-branch: dev
-    schedule:
-      interval: weekly
