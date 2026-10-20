@@ -30,7 +30,9 @@ jobs:
         include:
           - os: windows-latest
             label: windows-x64
-          - os: ubuntu-latest
+          # Pinned like CI's test job (distro-specific apt packages). Also
+          # sets the glibc floor of the Linux binary.
+          - os: ubuntu-24.04
             label: linux-amd64
           - os: macos-latest # Apple Silicon runner
             label: macos-arm64
