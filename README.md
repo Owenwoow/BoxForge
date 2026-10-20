@@ -2,12 +2,12 @@
 
 # 🗃️ BoxForge
 
-**Parametric 3D storage-box generator — rounded corners, recursive dividers, support-free 45° pill vents, straight to a printable STL.**
+**Parametric 3D storage-box generator — rounded corners, recursive dividers, support-free 45° pill vents, straight to a printable STL. Runs entirely in your browser.**
 
-[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-2ea44f?logo=github)](https://codespaces.new/Owenwoow/BoxForge?quickstart=1)
-[![CI](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci.yml)
+### 👉 [Use it online: owenwoow.github.io/BoxForge](https://owenwoow.github.io/BoxForge/)
+
+[![CI/CD](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Owenwoow/BoxForge/actions/workflows/ci-cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11–3.14](https://img.shields.io/badge/python-3.11--3.14-blue.svg)](https://www.python.org/)
 
 <img src="docs/images/hero_render.png" alt="BoxForge sample box" width="640">
 
@@ -21,10 +21,9 @@
 
 - [What is this?](#what-is-this)
 - [Features](#features)
-- [Screenshots](#screenshots)
-- [Get started](#get-started)
-  - [Option 1 — Online in GitHub Codespaces](#option-1--online-in-github-codespaces)
-  - [Option 2 — Run from source](#option-2--run-from-source)
+- [How to use it](#how-to-use-it)
+- [Architecture](#architecture)
+- [Local development](#local-development)
 - [Documentation](#documentation)
 - [Project structure](#project-structure)
 - [Contributing](#contributing)
@@ -32,101 +31,103 @@
 
 ## What is this?
 
-BoxForge turns a handful of parameters into a custom storage box and exports a **3D-printable STL**. Fill in the size, round the corners, drop in dividers wherever you want, punch support-free vent holes into the floor and dividers — then download and print.
+BoxForge turns a handful of parameters into a custom storage box and exports a **3D-printable STL**. Set the size, round the corners, drop in dividers wherever you want, punch support-free vents into the floor and dividers, then download and print.
 
-It ships in two forms that share the exact same modeling engine:
+Geometry is built with [OpenCASCADE](https://dev.opencascade.org/) — a real B-rep CAD kernel, **not** a mesh library — compiled to WebAssembly and running right in your browser. Fillets, shells and booleans are robust, and there is **no server: nothing is uploaded**.
 
-| Mode | Best for | Entry point |
-|---|---|---|
-| **Web UI** (Streamlit) | tweaking by hand with a live 3D preview | `streamlit run box_generator/app.py` |
-| **Command line** | scripting, batch generation, automation | `python box_generator/main.py config.yaml` |
-
-The geometry is built with [CadQuery](https://github.com/CadQuery/cadquery) — a real OpenCASCADE B-rep CAD kernel, **not** a mesh library — so fillets, shelling and boolean cuts are solid and reliable.
-
-> Storage boxes are **open-topped (no lid)** by design. Length and width are hard-capped at **250 mm** to fit a 256×256 print bed.
+> Boxes are **open-topped (no lid)** by design. Length and width are hard-capped at **250 mm** to fit a 256×256 print bed.
 
 ## Features
 
-- **Custom dimensions** — length / width / height / wall thickness, all parametric.
-- **Two independent fillet types** — rounded vertical corners (phone-case style) *and* rounded top/bottom horizontal rims (won't cut your hand). The top rim rounds **both** the inner and outer lip.
-- **Recursive dividers (BSP tree)** — split any region along X or Y, then recursively split any sub-region independently. One-click presets for halves and a 2×2 cross.
-- **45° support-free pill vents** — staggered capsule holes on the floor and/or dividers, auto-spaced with a solid border frame. The 45° angle self-bridges so it prints without supports. Outer walls are never vented.
-- **Live 3D preview** — the web UI shows the model on a simulated 256×256 print bed (Bambu-Studio style); rotate/zoom in-browser.
-- **Bilingual UI + light/dark theme** — switch 中文 / English and light / dark on the fly.
-- **Input hardening** — geometry limits are auto-clamped, filenames sanitized, and the partition tree is depth/size-capped, so it's safe to expose publicly.
+- **Custom dimensions** — length / width / height / wall thickness, via slider or exact number.
+- **Two independent fillet types** — vertical corner radius (phone-case style) *and* top/bottom rim fillets (no sharp edges). The top rim rounds **both** the outer and inner lip.
+- **Recursive dividers (BSP tree)** — split any region along length or width; each resulting cell can be subdivided again on its own. One-click presets (halves, cross) and a live top view.
+- **45° support-free pill vents** — staggered capsule holes in the floor and/or dividers, auto-spaced with a solid border frame. Outer walls are never vented.
+- **Live 3D preview** — the model sits on a simulated 256×256 bed (Bambu Studio-style); modeling runs in a background thread, so dragging sliders never freezes the page.
+- **Import, export and share configs** — download the design as YAML, import YAML to restore it, or copy a share link that encodes the whole design in the URL.
+- **Bilingual (中文 / English) + light/dark theme**, works on phones.
+- **Hardened input** — geometry limits are clamped (with a notice), filenames sanitized, divider-tree depth/size capped.
 
-## Screenshots
+## How to use it
 
-> 📌 **Add your own UI screenshots here.** Run the web UI, take a full-window screenshot, save it to the path below, and uncomment the line.
+1. Open **<https://owenwoow.github.io/BoxForge/>** (the first visit downloads the ~7 MB CAD kernel; later visits use the browser cache).
+2. Tune the parameters on the left; the 3D preview on the right updates live.
+3. Once **Valid geometry** shows `OK`, click **Download STL** and drop it into your slicer.
 
-<!-- ![Web UI overview](docs/images/ui_overview.png) -->
-`docs/images/ui_overview.png` *(to add — ~1200px wide recommended)*
+Every parameter, its limits, and common issues are covered in the [Usage reference](docs/usage.md).
 
-## Get started
+## Architecture
 
-### Option 1 — Online in GitHub Codespaces
+The project is designed to be **built, tested and hosted on GitHub** — no servers anywhere:
 
-Nothing to install — runs in GitHub's cloud from your browser:
-
-1. Open **<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>** (sign in to GitHub) and click **Create codespace**.
-2. Wait for the first-time setup (installs CadQuery, ~2 minutes). The web UI then starts on its own and opens in a preview tab.
-3. To open it in a full browser tab or share it, go to the **Ports** panel, find port `8501`, and open its forwarded address (`https://<codespace-name>-8501.app.github.dev`). It's private to you by default; right-click → **Port Visibility → Public** to let others open it.
-
-> A Codespace is a temporary cloud machine: it stops after ~30 minutes idle (reopen it from <https://github.com/codespaces>) and uses your account's free monthly Codespaces hours. Delete it there when you're done.
-
-### Option 2 — Run from source
-
-```bash
-# Python 3.11–3.14 required
-git clone https://github.com/Owenwoow/BoxForge.git
-cd BoxForge
-
-python -m venv .venv
-# Windows PowerShell:  .venv\Scripts\Activate.ps1
-# macOS / Linux:       source .venv/bin/activate
-pip install -r requirements.txt
-
-# Web UI  ->  http://localhost:8501
-streamlit run box_generator/app.py
-
-# …or the command line
-python box_generator/main.py box_generator/config.yaml   # writes box_output.stl
+```mermaid
+flowchart LR
+  subgraph B["Visitor's browser"]
+    UI["React UI"] -- params --> W["Web Worker<br/>OpenCASCADE (WebAssembly)"]
+    W -- mesh / stats / STL --> UI
+    UI --> V["Three.js 3D preview"]
+  end
+  subgraph G["GitHub"]
+    A["GitHub Actions: typecheck → unit tests → build → E2E"] -- main auto-deploys --> P["GitHub Pages (static files)"]
+  end
+  P -- HTML / JS / WASM --> B
 ```
 
-Full walkthrough: [Installation guide](docs/installation.md).
+- **Fully static site** — modeling happens in the visitor's browser; GitHub Pages only serves HTML/JS/WASM.
+- **All CI/CD on GitHub Actions** — every PR must pass typecheck, unit tests, the build, and a real-browser E2E run before it can merge into `main`; merging deploys to Pages automatically. Pushing a `vX.Y.Z` tag publishes a Release with the built site attached as a zip.
+- **Modeling core separate from the UI** — `src/core/` is DOM-free TypeScript tested in Node; the geometry tests pin volumes produced by the original Python/CadQuery implementation, so the port stays exact.
+
+> The previous version (Python + CadQuery + Streamlit, with CLI and desktop app) is preserved on the [`legacy`](https://github.com/Owenwoow/BoxForge/tree/legacy) branch.
+
+## Local development
+
+Requires Node.js 22 or newer.
+
+```bash
+git clone https://github.com/Owenwoow/BoxForge.git
+cd BoxForge
+npm install
+
+npm run dev         # dev server with hot reload  -> http://localhost:5173
+npm test            # unit tests: config validation + real OpenCASCADE modeling
+npm run build       # production build into dist/
+npm run e2e         # end-to-end tests in Chromium (run `npx playwright install chromium` first)
+```
+
+Branch model, commit conventions and release steps: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
 | Guide | English | 简体中文 |
 |---|---|---|
-| Install & run from source | [installation.md](docs/installation.md) | [installation.zh-CN.md](docs/installation.zh-CN.md) |
 | Parameters & usage reference | [usage.md](docs/usage.md) | [usage.zh-CN.md](docs/usage.zh-CN.md) |
+| Development, CI/CD & releases | [CONTRIBUTING.md](CONTRIBUTING.md) | same file (bilingual) |
 
 ## Project structure
 
 ```
 BoxForge/
-├── box_generator/
-│   ├── config.yaml            # sample config for the CLI
-│   ├── main.py                # CLI entry point
-│   ├── app.py                 # Streamlit web UI entry point
-│   ├── .streamlit/            # Streamlit config (public-deploy hardening)
-│   └── box_builder/
-│       ├── validate.py         # YAML validation + safe clamping
-│       ├── body.py             # box body: fillets + shell
-│       ├── partitions.py       # recursive BSP dividers
-│       ├── hollow.py           # 45° pill-vent arrays
-│       └── export.py           # STL export
-├── tests/                     # pytest suite (validation, modeling, web UI)
-├── docs/                      # guides (EN + 简体中文)
-├── .devcontainer/             # GitHub Codespaces setup (auto-starts the web UI)
-└── .github/workflows/         # CI (lint + tests) and tag releases
+├── src/
+│   ├── core/                  # DOM-free TypeScript, tested in Node
+│   │   ├── config.ts           # config schema, validation + safe clamping, presets
+│   │   └── geometry/
+│   │       ├── oc.ts           # OpenCASCADE (WASM) setup
+│   │       ├── body.ts         # box body: fillets + shell
+│   │       ├── partitions.ts   # recursive BSP dividers
+│   │       ├── hollow.ts       # 45° pill-vent arrays
+│   │       └── build.ts        # assembly, stats, preview mesh, STL export
+│   ├── worker/                # background modeling thread (Web Worker)
+│   └── ui/                    # React UI, Three.js preview, zh/en strings
+├── e2e/                       # Playwright end-to-end tests
+├── docs/                      # usage reference (English + 简体中文)
+├── index.html · vite.config.ts · playwright.config.ts
+└── .github/workflows/         # ci-cd.yml (test + deploy Pages) · release.yml
 ```
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, branch model (`dev` for work, `main` for releases), and commit conventions. Open an [issue](https://github.com/Owenwoow/BoxForge/issues) for bugs and feature requests.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, branch model (`dev` for work, `main` = what's live), and commit conventions. Open an [issue](https://github.com/Owenwoow/BoxForge/issues) for bugs and feature requests.
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). The modeling kernel uses [replicad](https://replicad.xyz/) (MIT) and `replicad-opencascadejs`, a WebAssembly build of OpenCASCADE (LGPL-2.1), shipped as a separate `.wasm` file with the site.
