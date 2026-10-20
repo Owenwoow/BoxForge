@@ -1,10 +1,10 @@
-# Streamlit configuration for a public-facing deployment.
-# These defaults harden the server; override at runtime with env vars
+# Streamlit server configuration (hardened defaults: no telemetry, no dev
+# toolbar, no stack traces shown to users). Override at runtime with env vars
 # (STREAMLIT_SERVER_*) or CLI flags if needed.
 
 [server]
 headless = true            # no "open browser" prompt; run as a service
-address = "0.0.0.0"        # listen on all interfaces (inside the container)
+address = "0.0.0.0"        # listen on all interfaces (Codespaces port forwarding)
 port = 8501
 enableCORS = true          # keep same-origin protection on
 enableXsrfProtection = true

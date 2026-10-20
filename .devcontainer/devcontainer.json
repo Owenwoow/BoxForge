@@ -1,0 +1,32 @@
+{
+  // GitHub Codespaces: open the repo in the cloud and the web UI starts on
+  // its own -- https://codespaces.new/Owenwoow/BoxForge?quickstart=1
+  "name": "BoxForge",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm",
+
+  // OCP / OpenCASCADE links against X11/OpenGL libs even headless.
+  "onCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglu1-mesa libx11-6 libxext6 libxrender1 libsm6 libice6 libfontconfig1 libglib2.0-0 libgomp1 && pip install --user -r requirements-dev.txt",
+
+  // Runs in a terminal every time the Codespace is opened. CORS/XSRF are off
+  // because Codespaces serves the app through its own forwarding proxy.
+  "postAttachCommand": {
+    "web": "streamlit run box_generator/app.py --server.enableCORS false --server.enableXsrfProtection false"
+  },
+
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": {
+      "label": "BoxForge web UI",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md"]
+    },
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}

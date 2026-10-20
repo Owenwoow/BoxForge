@@ -8,21 +8,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **GitHub Codespaces**: one-click online run
+  (<https://codespaces.new/Owenwoow/BoxForge?quickstart=1>); the dev container
+  installs everything and starts the web UI automatically.
 - **Test suite** (`pytest`): config validation and abuse guards, real CadQuery
   modeling, CLI export, and a headless Streamlit run of the web UI.
-- **Docker image on GHCR**: CI builds, smoke-tests and publishes
-  `ghcr.io/owenwoow/boxforge` (`:dev`, `:edge`, `:X.Y.Z`, `:latest`), so
-  servers just pull instead of building.
-- Dependabot updates for GitHub Actions and the Docker base image.
+- Dependabot updates for GitHub Actions and the dev container.
 
 ### Changed
 
-- CI now runs lint (ruff) + tests on Python 3.11, 3.13 and 3.14, then builds
-  and tests the Docker image before publishing it.
-- `docker-compose.yml` pulls the published image (pick a version with
-  `BOXFORGE_TAG`); `--build` still builds locally.
+- CI runs lint (ruff) + tests on Python 3.11, 3.13 and 3.14, and must pass
+  before a PR can merge into `main`. Tag pushes publish a GitHub Release.
 - Supported Python is now **3.11–3.14** (current CadQuery dropped 3.10 and
   added 3.14).
+
+### Removed
+
+- Desktop app (PyInstaller builds) — use Codespaces or run from source.
+- Docker image, `docker-compose.yml` and the self-hosted deployment guide.
 
 ## [0.1.0] - 2026-07-22
 
