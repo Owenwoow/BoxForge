@@ -25,7 +25,7 @@
     "js-yaml": "^5.5.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "replicad": "^1.1.0",
+    "replicad": "^1.2.0",
     "replicad-opencascadejs": "^1.1.0",
     "three": "^0.186.1"
   },
@@ -37,7 +37,7 @@
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~5.9.3",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
   }
 }
